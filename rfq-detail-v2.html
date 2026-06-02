@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aker — RFQ Detail v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Mid-fi label ─────────────────────────────────────── */
+    .v2-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.3); border-radius: 999px;
+      font-size: 10px; font-weight: 600; color: #a855f7;
+      letter-spacing: 0.06em; margin-bottom: var(--s-4);
+    }
+
+    /* Placeholder */
+    .ph {
+      background: var(--bg-elevated);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); font-size: var(--fs-xs); font-style: italic;
+    }
+
+    /* Section card */
+    .sec {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: var(--s-4);
+    }
+    .sec-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-3) var(--s-5);
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      font-size: var(--fs-sm); font-weight: 600;
+    }
+    .sec-body { padding: var(--s-4) var(--s-5); }
+
+    /* Meta grid */
+    .meta-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--s-4); }
+    .meta-label { font-size: var(--fs-xs); color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .meta-val   { font-size: var(--fs-sm); color: var(--fg); font-weight: 500; }
+
+    /* Line items table */
+    .li-table { width: 100%; border-collapse: collapse; }
+    .li-table th {
+      text-align: left; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted);
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border); background: var(--bg-elevated);
+      white-space: nowrap;
+    }
+    .li-table td {
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--fs-sm); vertical-align: middle;
+    }
+    .li-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ── VENDOR LIST LAYOUT ─────────────────────────────── */
+    .vendor-layout {
+      display: block;
+    }
+
+    /* Vendor table */
+    .vendor-table { width: 100%; border-collapse: collapse; }
+    .vendor-table th {
+      text-align: left; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em; color: var(--fg-muted);
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border); background: var(--bg-elevated);
+      white-space: nowrap;
+    }
+    .vendor-table td {
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--fs-sm); vertical-align: middle;
+    }
+    .vendor-table tbody tr { cursor: pointer; transition: background 0.1s; }
+    .vendor-table tbody tr:hover td { background: var(--bg-subtle); }
+    .vendor-table tbody tr.selected td { background: rgba(6,182,212,0.06); border-left: 2px solid var(--accent); }
+    .vendor-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Badge pill with count */
+    .badge-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--warning); color: white;
+      font-size: 10px; font-weight: 700; margin-left: 4px;
+      vertical-align: middle;
+    }
+    .badge-count.green { background: var(--success); }
+
+    /* ── VENDOR RIGHT PANEL — full height fixed ──────── */
+    .vendor-panel {
+      display: none;
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: calc((100vw - var(--nav-w)) * 0.67);
+      border-left: 1px solid var(--border);
+      background: var(--bg-surface);
+      flex-direction: column;
+      z-index: 50;
+      box-shadow: -8px 0 32px rgba(0,0,0,0.35);
+    }
+    .vendor-panel.open { display: flex; }
+
+    /* Dim overlay behind panel */
+    .panel-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 49;
+    }
+    .panel-overlay.show { display: block; }
+
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-4);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .panel-vendor-name { font-size: var(--fs-md); font-weight: 600; }
+    .panel-vendor-meta { font-size: var(--fs-xs); color: var(--fg-muted); margin-top: 2px; }
+    .panel-close {
+      width: 28px; height: 28px; border-radius: var(--r-sm);
+      background: none; border: 1px solid var(--border);
+      color: var(--fg-muted); cursor: pointer; display: grid; place-items: center;
+    }
+    .panel-close:hover { background: var(--bg-hover); color: var(--fg); }
+
+    /* Panel tabs */
+    .panel-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .panel-tab {
+      padding: var(--s-3) var(--s-4); font-size: var(--fs-sm);
+      color: var(--fg-muted); cursor: pointer; border-bottom: 2px solid transparent;
+      transition: color 0.12s; white-space: nowrap;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .panel-tab:hover { color: var(--fg); }
+    .panel-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Panel body */
+    .panel-body { flex: 1; overflow-y: auto; }
+    .panel-pane { display: none; padding: var(--s-4); }
+    .panel-pane.active { display: block; }
+
+    /* Query thread */
+    .query-thread { display: flex; flex-direction: column; gap: var(--s-3); margin-bottom: var(--s-4); }
+    .qmsg {
+      padding: var(--s-3) var(--s-4);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); line-height: 1.5;
+      border: 1px solid var(--border);
+    }
+    .qmsg.vendor  { background: var(--bg-elevated); }
+    .qmsg.engg    { background: rgba(6,182,212,0.05); border-color: rgba(6,182,212,0.18); }
+    .qmsg-meta    { font-size: var(--fs-xs); color: var(--fg-subtle); margin-bottom: 4px; display:flex; justify-content:space-between; }
+    .qmsg-author  { font-weight: 600; color: var(--fg); }
+    .qmsg-body    { color: var(--fg-muted); }
+
+    .query-compose { margin-top: var(--s-3); }
+    .query-compose textarea {
+      width: 100%; box-sizing: border-box;
+      padding: var(--s-3); resize: none; height: 72px;
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--fg);
+      font-size: var(--fs-sm); font-family: var(--font-sans); line-height: 1.5;
+    }
+    .query-compose textarea:focus { outline: none; border-color: var(--accent); }
+
+    /* Add to FAQ button */
+    .add-faq-btn {
+      display: flex; align-items: center; gap: var(--s-2);
+      padding: 5px var(--s-3);
+      background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2);
+      border-radius: var(--r-md); font-size: var(--fs-xs); color: var(--success);
+      cursor: pointer; margin-top: var(--s-2);
+    }
+    .add-faq-btn:hover { background: rgba(16,185,129,0.12); }
+
+    /* FAQ section */
+    .faq-item {
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      overflow: hidden; margin-bottom: var(--s-3);
+    }
+    .faq-q {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-3) var(--s-4);
+      background: var(--bg-elevated); cursor: pointer;
+      font-size: var(--fs-sm); font-weight: 500;
+    }
+    .faq-q:hover { background: var(--bg-hover); }
+    .faq-a {
+      padding: var(--s-3) var(--s-4);
+      font-size: var(--fs-sm); color: var(--fg-muted);
+      line-height: 1.5; display: none;
+      border-top: 1px solid var(--border);
+    }
+    .faq-a.open { display: block; }
+
+    /* TBD placeholder banner */
+    .tbd-banner {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-4);
+      background: rgba(113,113,122,0.08);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); color: var(--fg-muted);
+    }
+
+    /* File pill */
+    .fpill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      font-size: var(--fs-xs); color: var(--fg-muted);
+    }
+
+    .mono { font-family: var(--font-mono); }
+  
+    /* Back navigation */
+    .back-nav {
+      display: flex; align-items: center; gap: var(--s-2);
+      margin-bottom: var(--s-5);
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); font-weight: 500;
+      color: var(--fg-muted); text-decoration: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    .back-btn:hover { color: var(--fg); background: var(--bg-hover); }
+    .back-btn svg { flex-shrink: 0; }
+    .back-crumb-sep { color: var(--border-strong); font-size: var(--fs-sm); }
+    .back-crumb-current { font-size: var(--fs-sm); color: var(--fg); font-weight: 500; }
+  </style>
+</head>
+<body class="app">
+
+  <!-- Nav -->
+  <aside class="nav">
+    <div class="nav-brand">
+      <button class="hamburger-btn" onclick="toggleNav()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+      <div class="nav-brand-text">
+        <div class="nav-brand-name">Procure</div>
+        <div class="nav-brand-sub">Procurement</div>
+      </div>
+    </div>
+        <div class="nav-items">
+      <a class="nav-item" href="dashboard.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header" href="clients.html" onclick="toggleGroup(this)">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V7l6-4 6 4v7zM6 14V9h4v5"/></svg>
+          <span>Master Data</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="clients.html">Clients</a>
+          <a class="nav-item nav-sub-item" href="projects.html">Projects</a>
+          <a class="nav-item nav-sub-item" href="vendor-categories.html">Categories</a>
+          <a class="nav-item nav-sub-item" href="terms-conditions.html">Terms &amp; Conditions</a>
+          <a class="nav-item nav-sub-item" href="payment-terms.html">Payment Terms</a>
+          <a class="nav-item nav-sub-item" href="inco-terms.html">Inco Terms</a>
+          <a class="nav-item nav-sub-item" href="uom.html">Unit of Measure</a>
+          <a class="nav-item nav-sub-item" href="additional-costs.html">Additional Costs</a>
+          <a class="nav-item nav-sub-item" href="vendors.html">Vendors</a>
+        </div>
+      </div>
+      <a class="nav-item" href="pr-list-v2.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M5 8h6M5 11h4"/></svg>
+        <span>Purchase Requisitions</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header expanded has-active" href="rfq-list-v2.html">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2z"/><path d="M2 4l6 5 6-5"/></svg>
+          <span>RFQs</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item  active" href="rfq-list-v2.html">All RFQs</a>
+          <a class="nav-item nav-sub-item" href="rfq-create-v2.html">New RFQ</a>
+        </div>
+      </div>
+      <a class="nav-item" href="purchase-orders.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l1.5 8.5a1 1 0 0 0 1 .85h7a1 1 0 0 0 1-.85L14 4"/><path d="M2 4h12M6 7v3M10 7v3"/></svg>
+        <span>Purchase Orders</span>
+      </a>
+    </div>
+    <div class="nav-footer">
+      <div class="user-card">
+        <div class="avatar">SM</div>
+        <div>
+          <div class="user-name">S. Mehta</div>
+          <div class="user-email">Engineering Lead</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="nav-backdrop" id="nav-backdrop" onclick="closeNav()"></div>
+
+  <main class="main" style="padding-bottom:80px;">
+
+    
+
+    <div class="back-nav">
+      <a class="back-btn" href="rfq-list-v2.html"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4L6 8l4 4"/></svg> All RFQs</a>
+      <span class="back-crumb-sep">/</span>
+      <span class="back-crumb-current">RFQ-2026-041</span>
+    </div>
+
+    <!-- RFQ Header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--s-5);">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-2);">
+          <h1 style="font-size:var(--fs-2xl);font-weight:700;letter-spacing:-0.01em;">RFQ-2026-041</h1>
+          <span class="badge" style="background:rgba(6,182,212,0.10);color:var(--info);">Active · Technical Phase</span>
+        </div>
+        <div style="font-size:var(--fs-sm);color:var(--fg-muted);">Mechanical Piping — Utility Deck · From PR-2026-018</div>
+      </div>
+      <div style="display:flex;gap:var(--s-2);align-items:center;">
+        <button class="btn btn-ghost btn-sm">Edit RFQ</button>
+        <a href="bid-matrix-v2.html" class="btn btn-primary btn-sm" style="gap:var(--s-2);">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h12v12H2z"/><path d="M2 6h12M2 10h12M6 2v12M10 2v12"/></svg>
+          Comparison Matrix
+        </a>
+      </div>
+    </div>
+
+    <!-- ── RFQ Details ────────────────────────────────────── -->
+    <div class="sec">
+      <div class="sec-head">RFQ Details</div>
+      <div class="sec-body">
+        <div class="meta-grid" style="margin-bottom:var(--s-4);">
+          <div><div class="meta-label">Client / Project</div><div class="meta-val">FPSO Njord Refit — Ph.3</div></div>
+          <div><div class="meta-label">Category</div><div class="meta-val">Piping &amp; Valves</div></div>
+          <div><div class="meta-label">Tech Bid Deadline</div><div class="meta-val" style="color:var(--warning);">16 Jun 2026</div></div>
+          <div><div class="meta-label">Comm Bid Deadline</div><div class="meta-val">30 Jun 2026</div></div>
+          <div><div class="meta-label">Inco Terms</div><div class="meta-val">CIF — Mumbai Port</div></div>
+          <div><div class="meta-label">Payment Terms</div><div class="meta-val">30% Adv, 70% Delivery</div></div>
+          <div><div class="meta-label">Evaluation Mode</div><div class="meta-val">Sequential</div></div>
+          <div><div class="meta-label">T&amp;C Package</div><div class="meta-val">Standard Offshore</div></div>
+        </div>
+        <div style="font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:0.06em;color:var(--fg-subtle);margin-bottom:var(--s-2);">RFQ Documents</div>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--s-2);">
+          <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>RFQ_Scope_041.pdf</div>
+          <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>TC_Package_Standard.pdf</div>
+          <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>DataSheet_GD-041.pdf</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Line Items ─────────────────────────────────────── -->
+    <div class="sec">
+      <div class="sec-head">Line Items <span style="font-size:var(--fs-xs);font-weight:400;color:var(--fg-subtle);margin-left:var(--s-2);">From PR-2026-018 · read-only</span></div>
+      <div style="overflow-x:auto;">
+        <table class="li-table">
+          <thead>
+            <tr>
+              <th style="width:36px;">#</th>
+              <th style="min-width:200px;">Description</th>
+              <th>Category</th>
+              <th style="width:70px;">PR Qty</th>
+              <th style="width:90px; background:rgba(6,182,212,0.06); color:var(--info);">RFQ Qty ✎</th>
+              <th style="width:60px;">Unit</th>
+              <th>Specs / Drawings</th>
+              <th style="width:90px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono" style="color:var(--fg-subtle);font-size:11px;">01</td>
+              <td style="font-weight:500;">Gate Valve — 6" Class 300, SS316</td>
+              <td style="color:var(--fg-muted);">Valves</td>
+              <td class="mono">24</td>
+              <td class="mono" style="background:rgba(6,182,212,0.04);">24</td>
+              <td style="color:var(--fg-muted);">No.</td>
+              <td><div class="fpill">GV-6in-Spec.pdf</div></td>
+              <td><span class="badge" style="font-size:10px;background:rgba(6,182,212,0.10);color:var(--info);">In RFQ</span></td>
+            </tr>
+            <tr>
+              <td class="mono" style="color:var(--fg-subtle);font-size:11px;">02</td>
+              <td style="font-weight:500;">Check Valve — 4" Swing Type, CS</td>
+              <td style="color:var(--fg-muted);">Valves</td>
+              <td class="mono">12</td>
+              <td class="mono" style="background:rgba(6,182,212,0.04);">12</td>
+              <td style="color:var(--fg-muted);">No.</td>
+              <td><div class="ph" style="height:22px;width:80px;">[ No file ]</div></td>
+              <td><span class="badge" style="font-size:10px;background:rgba(6,182,212,0.10);color:var(--info);">In RFQ</span></td>
+            </tr>
+            <tr>
+              <td class="mono" style="color:var(--fg-subtle);font-size:11px;">03</td>
+              <td style="font-weight:500;">Pipe Spool — 8" SCH 40, SS316L</td>
+              <td style="color:var(--fg-muted);">Piping</td>
+              <td class="mono">80 m</td>
+              <td class="mono" style="background:rgba(6,182,212,0.04);">80 m</td>
+              <td style="color:var(--fg-muted);">M</td>
+              <td><div class="fpill">IsometricDwg-03.pdf</div></td>
+              <td><span class="badge" style="font-size:10px;background:rgba(6,182,212,0.10);color:var(--info);">In RFQ</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Vendor List + Right Panel ─────────────────────── -->
+    <div class="sec" style="overflow:hidden;">
+      <div class="sec-head">
+        Invited Vendors
+        <div style="display:flex;align-items:center;gap:var(--s-2);">
+          <span style="font-size:var(--fs-xs);color:var(--fg-subtle);font-weight:400;">5 vendors · 2 pending action</span>
+          <button class="btn btn-primary btn-sm">+ Invite More Vendors</button>
+        </div>
+      </div>
+
+      <div class="vendor-layout" id="vendor-layout">
+        <!-- Vendor table -->
+        <div style="overflow-x:auto;">
+          <table class="vendor-table">
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th>
+                <th style="min-width:180px;">Vendor Name</th>
+                <th>Status</th>
+                <th>Pre-bid Queries</th>
+                <th>Technical Queries</th>
+                <th style="width:80px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="vrow-1" onclick="openVendor(1)">
+                <td class="mono" style="color:var(--fg-subtle);font-size:11px;">01</td>
+                <td style="font-weight:500;">Precision Valves &amp; Controls Pvt Ltd</td>
+                <td><span class="badge" style="font-size:10px;background:rgba(245,158,11,0.10);color:var(--warning);">Bid Submitted</span></td>
+                <td>
+                  <span style="font-size:var(--fs-xs);color:var(--fg-muted);">1 sent</span>
+                  <span class="badge-count">1</span>
+                </td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);">—</span></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openVendor(1)">Details</button></td>
+              </tr>
+              <tr id="vrow-2" onclick="openVendor(2)">
+                <td class="mono" style="color:var(--fg-subtle);font-size:11px;">02</td>
+                <td style="font-weight:500;">Flowline Industries Ltd</td>
+                <td><span class="badge" style="font-size:10px;background:rgba(16,185,129,0.10);color:var(--success);">Bid Approved</span></td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);">1 sent · FAQ'd</span></td>
+                <td>
+                  <span style="font-size:var(--fs-xs);color:var(--fg-muted);">1 open</span>
+                  <span class="badge-count">1</span>
+                </td>
+                <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openVendor(2)">Details</button></td>
+              </tr>
+              <tr id="vrow-3" onclick="openVendor(3)">
+                <td class="mono" style="color:var(--fg-subtle);font-size:11px;">03</td>
+                <td style="font-weight:500;">Atlas Pipe &amp; Fittings Co</td>
+                <td><span class="badge" style="font-size:10px;background:rgba(6,182,212,0.10);color:var(--info);">Invited</span></td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);">—</span></td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);">—</span></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openVendor(3)">Details</button></td>
+              </tr>
+              <tr id="vrow-4" onclick="openVendor(4)">
+                <td class="mono" style="color:var(--fg-subtle);font-size:11px;">04</td>
+                <td style="font-weight:500;">SteelCraft Fabrications Pvt Ltd</td>
+                <td><span class="badge" style="font-size:10px;background:rgba(245,158,11,0.10);color:var(--warning);">Bid Submitted</span></td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);">—</span></td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);">—</span></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openVendor(4)">Details</button></td>
+              </tr>
+              <tr id="vrow-5" onclick="openVendor(5)">
+                <td class="mono" style="color:var(--fg-subtle);font-size:11px;">05</td>
+                <td style="font-weight:500;">Bharat Pipe Works Ltd</td>
+                <td><span class="badge" style="font-size:10px;background:rgba(239,68,68,0.10);color:var(--danger);">Regret to Quote</span></td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);">—</span></td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);">—</span></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openVendor(5)">Details</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── RIGHT PANEL ────────────────────────────────── -->
+        <div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
+        <div class="vendor-panel" id="vendor-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-vendor-name" id="panel-name">—</div>
+              <div class="panel-vendor-meta" id="panel-meta">—</div>
+            </div>
+            <button class="panel-close" onclick="closePanel()">✕</button>
+          </div>
+
+          <!-- Tabs -->
+          <div class="panel-tabs">
+            <div class="panel-tab active" onclick="switchPanelTab('bid', this)">Bid</div>
+            <div class="panel-tab" onclick="switchPanelTab('prebid', this)">
+              Pre-bid Queries
+              <span class="badge-count" id="prebid-badge" style="display:none;">1</span>
+            </div>
+            <div class="panel-tab" onclick="switchPanelTab('tq', this)">
+              Technical Queries
+              <span class="badge-count" id="tq-badge" style="display:none;">1</span>
+            </div>
+            <div class="panel-tab" onclick="switchPanelTab('comm', this)" id="comm-tab">
+              Commercial Bid
+            </div>
+          </div>
+
+          <div class="panel-body">
+
+            <!-- BID TAB -->
+            <div class="panel-pane active" id="pane-bid">
+              <div id="bid-content"></div>
+            </div>
+
+            <!-- PRE-BID TAB -->
+            <div class="panel-pane" id="pane-prebid">
+              <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-3);">Pre-bid query thread</div>
+
+              <div class="query-thread">
+                <div class="qmsg vendor">
+                  <div class="qmsg-meta">
+                    <span class="qmsg-author">Precision Valves — R. Kapoor</span>
+                    <span>12 May · 11:20</span>
+                  </div>
+                  <div class="qmsg-body">We would like to clarify whether the gate valve body material specified as CF8M (ASTM A351) can be substituted with SS316 (ASTM A182 F316) for this scope. Our casting facility in Nashik is currently NABL-certified for SS316 forgings only, and procuring CF8M castings from an external foundry would add approximately 3–4 weeks to our lead time. This substitution would allow us to commit to the technical bid deadline without any schedule risk. Please advise whether this is acceptable, and if so, whether you require a third-party material certification or an in-house mill test report.</div>
+                </div>
+                <div class="qmsg engg">
+                  <div class="qmsg-meta">
+                    <span class="qmsg-author" style="color:var(--info);">S. Mehta · Engineering Lead</span>
+                    <span>12 May · 15:40</span>
+                  </div>
+                  <div class="qmsg-body">SS316 (ASTM A182 F316) is acceptable as a substitute for CF8M (ASTM A351) for this service, subject to the following conditions: (1) Mill Test Reports (MTCs) confirming compliance with ASTM A182 F316 must be submitted along with the technical bid. (2) The material traceability must be maintained from heat to finished part. (3) Any deviation from the original material specification must be clearly flagged in your Technical Bid submission document with a formal deviation note. This response applies only to gate valve bodies in this scope — check-valve body materials remain as specified.</div>
+                  <button class="add-faq-btn" onclick="openFAQModal('Can SS316 (ASTM A182 F316) be substituted for CF8M (ASTM A351) for gate valve bodies?', 'SS316 (ASTM A182 F316) is acceptable as a substitute for CF8M (ASTM A351) for this service, subject to: (1) Mill Test Reports confirming ASTM A182 F316 compliance submitted with technical bid, (2) full material traceability maintained, (3) deviation formally flagged in the Technical Bid document. Applies to gate valve bodies only — check-valve body materials remain as specified.')">
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+                    Add Query &amp; Response as FAQ to the RFQ
+                  </button>
+                </div>
+              </div>
+
+              <!-- Compose new -->
+              <div style="border-top:1px solid var(--border);padding-top:var(--s-3);">
+                <div style="font-size:var(--fs-xs);color:var(--fg-subtle);margin-bottom:var(--s-2);">Send pre-bid query response:</div>
+                <div class="query-compose">
+                  <textarea placeholder="Type a response to this vendor's pre-bid query…"></textarea>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--s-2);">
+                    <label class="internal-toggle-wrap" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:var(--fs-xs);color:var(--fg-muted);">
+                      <div class="toggle" id="toggle-prebid" onclick="toggleInternal(this)"></div>
+                      Internal only — not sent to vendor
+                    </label>
+                    <div style="display:flex;gap:var(--s-2);">
+                      <button class="btn btn-ghost btn-sm" onclick="showToast('File upload — demo')">Upload file</button>
+                      <button class="btn btn-primary btn-sm">Send</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TQ TAB -->
+            <div class="panel-pane" id="pane-tq">
+              <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-3);">Technical queries — Engineering initiated</div>
+
+              <div class="query-thread">
+                <div class="qmsg engg">
+                  <div class="qmsg-meta">
+                    <span class="qmsg-author" style="color:var(--info);">S. Mehta · Engineering Lead</span>
+                    <span>14 May · 10:04</span>
+                  </div>
+                  <div class="qmsg-body">During technical bid review, we noted that your submitted product catalogue (Catalogue Ref: FIL-GV-2024, Rev B) references gate valve body material as A216 WCB (carbon steel casting). This does not meet the project design envelope which mandates A182 F316 SS for all corrosive-service gate valves in this scope as per Process Line Class PS-04. Please provide: (1) Revised technical data sheet confirming A182 F316 SS body material, (2) API 610 11th Edition compliance declaration, and (3) Mill Test Reports from your current heat batch. This is a critical clarification — your bid cannot be technically approved until this is resolved. Please respond within 48 hours to avoid impacting the evaluation schedule.</div>
+                </div>
+                <div class="qmsg vendor">
+                  <div class="qmsg-meta">
+                    <span class="qmsg-author">Flowline Industries — R. Kapoor</span>
+                    <span>15 May · 09:30</span>
+                  </div>
+                  <div class="qmsg-body">Thank you for raising this. We confirm that all gate valve bodies in our supply scope will be manufactured from A182 F316 SS as required by line class PS-04. The original catalogue reference to A216 WCB was an administrative error — our standard catalogue covers multiple material grades and the wrong revision was inadvertently attached to our bid. The correct material has always been intended per the RFQ specification. We have attached: (1) Revised Technical Data Sheet — FIL-GV-2024 Rev C, (2) API 610 11th Ed. compliance certificate, and (3) MTCs for the current production batch (Heat No. F316-2024-0312).</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:var(--s-2);margin-top:var(--s-3);">
+                    <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>FIL-GV-2024_Rev-C_TDS.pdf</div>
+                    <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>API610_Compliance_Cert.pdf</div>
+                    <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>MTC_F316-2024-0312.pdf</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Compose TQ -->
+              <div style="border-top:1px solid var(--border);padding-top:var(--s-3);">
+                <div style="font-size:var(--fs-xs);color:var(--fg-subtle);margin-bottom:var(--s-2);">Raise new technical query to this vendor:</div>
+                <div class="query-compose">
+                  <textarea placeholder="Describe the technical clarification needed from this vendor…"></textarea>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--s-2);">
+                    <label class="internal-toggle-wrap" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:var(--fs-xs);color:var(--fg-muted);">
+                      <div class="toggle" id="toggle-tq" onclick="toggleInternal(this)"></div>
+                      Internal only — not sent to vendor
+                    </label>
+                    <div style="display:flex;gap:var(--s-2);">
+                      <button class="btn btn-ghost btn-sm" onclick="showToast('File upload — demo')">Upload file</button>
+                      <button class="btn btn-primary btn-sm">Send TQ</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COMMERCIAL BID TAB -->
+            <div class="panel-pane" id="pane-comm">
+              <div id="comm-content">
+                <!-- Default: locked state -->
+                <div style="text-align:center;padding:var(--s-8) var(--s-4);color:var(--fg-subtle);">
+                  <svg width="32" height="32" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto var(--s-3);display:block;opacity:0.3;"><rect x="3" y="7" width="10" height="8" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+                  <div style="font-size:var(--fs-sm);font-weight:600;margin-bottom:4px;">Commercial bid sealed</div>
+                  <div style="font-size:var(--fs-xs);">Visible only after technical bid deadline passes or all vendors reach terminal technical status.</div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /panel-body -->
+        </div><!-- /vendor-panel -->
+
+      </div><!-- /vendor-layout -->
+    </div><!-- /.sec vendor -->
+
+    <!-- ── FAQ List ───────────────────────────────────────── -->
+    <div class="sec">
+      <div class="sec-head">
+        RFQ FAQ List
+        <span style="font-size:var(--fs-xs);font-weight:400;color:var(--fg-subtle);">Broadcast to all invited vendors · anonymous</span>
+      </div>
+      <div class="sec-body">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)">
+            <span>Q1 — Can SS316 be used in lieu of CF8M for valve bodies?</span>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+          </div>
+          <div class="faq-a open">SS316 is acceptable provided mill test reports (MTCs) are submitted with the technical bid confirming compliance with ASTM A182 F316.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)">
+            <span>Q2 — Is TEMA class C acceptable for non-critical cooling service?</span>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+          </div>
+          <div class="faq-a">TEMA class B is mandatory for this service as per project design basis Rev D. All vendors must quote TEMA B. TEMA C will not be accepted during technical evaluation.</div>
+        </div>
+        <div style="padding:var(--s-3) var(--s-4);border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--fg-subtle);">
+          FAQs are broadcast anonymously — vendor identities are stripped before publishing.
+        </div>
+      </div>
+    </div>
+
+
+  </main>
+
+  <!-- Bid Approve/Reject Modal -->
+  <div id="bid-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-lg);width:420px;padding:var(--s-5);box-shadow:var(--shadow-lg);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-4);">
+        <div id="bid-modal-title" style="font-size:var(--fs-md);font-weight:700;"></div>
+        <button onclick="closeBidModal()" style="background:none;border:none;color:var(--fg-muted);cursor:pointer;font-size:18px;line-height:1;">✕</button>
+      </div>
+      <div style="font-size:var(--fs-sm);color:var(--fg-muted);margin-bottom:var(--s-3);">Add a comment before confirming:</div>
+      <textarea id="bid-modal-comment" rows="4" style="width:100%;box-sizing:border-box;padding:var(--s-3);background:var(--bg-base);border:1px solid var(--border);border-radius:var(--r-md);color:var(--fg);font-size:var(--fs-sm);font-family:var(--font-sans);resize:none;line-height:1.5;" oninput="this.style.borderColor='var(--border)'"></textarea>
+      <div style="display:flex;justify-content:flex-end;gap:var(--s-2);margin-top:var(--s-4);">
+        <button class="btn btn-ghost" onclick="closeBidModal()">Cancel</button>
+        <button id="bid-modal-confirm" class="btn btn-primary" onclick="confirmBidAction()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ Modal -->
+  <div id="faq-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-lg);width:520px;padding:var(--s-5);box-shadow:var(--shadow-lg);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-4);">
+        <div style="font-size:var(--fs-md);font-weight:700;">Add to RFQ FAQ</div>
+        <button onclick="closeFAQModal()" style="background:none;border:none;color:var(--fg-muted);cursor:pointer;font-size:18px;line-height:1;">✕</button>
+      </div>
+      <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-2);">Question</div>
+      <textarea id="faq-modal-q" rows="2" style="width:100%;box-sizing:border-box;padding:var(--s-3);background:var(--bg-base);border:1px solid var(--border);border-radius:var(--r-md);color:var(--fg);font-size:var(--fs-sm);font-family:var(--font-sans);resize:none;margin-bottom:var(--s-3);line-height:1.5;"></textarea>
+      <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-2);">Answer</div>
+      <textarea id="faq-modal-a" rows="4" style="width:100%;box-sizing:border-box;padding:var(--s-3);background:var(--bg-base);border:1px solid var(--border);border-radius:var(--r-md);color:var(--fg);font-size:var(--fs-sm);font-family:var(--font-sans);resize:none;margin-bottom:var(--s-3);line-height:1.5;"></textarea>
+      <div style="font-size:var(--fs-xs);color:var(--fg-subtle);margin-bottom:var(--s-4);">This Q&amp;A will be broadcast anonymously to all invited vendors.</div>
+      <div style="display:flex;justify-content:flex-end;gap:var(--s-2);">
+        <button class="btn btn-ghost" onclick="closeFAQModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmAddFAQ()">Add to FAQ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);color:var(--fg);display:flex;align-items:center;gap:var(--s-2);box-shadow:var(--shadow-md);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.2s;white-space:nowrap;">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    function toggleGroup(el) {
+      el.classList.toggle('expanded');
+    }
+    function toggleNav() { document.querySelector('.nav').classList.toggle('open'); document.getElementById('nav-backdrop').classList.toggle('open'); }
+
+    function toggleInternal(el) {
+      el.classList.toggle('on');
+      const isOn = el.classList.contains('on');
+      el.style.background = isOn ? 'rgba(245,158,11,0.35)' : '';
+      const label = el.closest('label');
+      if (label) label.style.color = isOn ? 'var(--warning)' : 'var(--fg-muted)';
+      const compose = el.closest('.query-compose');
+      if (compose) {
+        const ta = compose.querySelector('textarea');
+        if (ta) {
+          ta.style.borderColor = isOn ? 'rgba(245,158,11,0.6)' : '';
+          ta.style.background = isOn ? 'rgba(245,158,11,0.06)' : '';
+          ta.style.boxShadow = isOn ? '0 0 0 2px rgba(245,158,11,0.15)' : '';
+        }
+      }
+    }
+    function closeNav()  { document.querySelector('.nav').classList.remove('open'); document.getElementById('nav-backdrop').classList.remove('open'); }
+
+    const vendors = {
+      1: {
+        name: 'Precision Valves & Controls Pvt Ltd',
+        meta: 'Nashik · Instrumentation & Control · Approved vendor',
+        status: 'Bid Submitted',
+        prebidCount: 1,
+        tqCount: 0,
+        commContent: `
+          <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-3);">Commercial bid submitted</div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:var(--s-4);">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Line Item</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Amount</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Transport</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Insurance</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Total</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);font-size:var(--fs-xs);">Gate Valve — 6" SS316</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹3,45,000</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹8,500</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹9,800</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:600;">₹3,63,300</td></tr>
+              <tr><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);font-size:var(--fs-xs);">Check Valve — 4" CS</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹1,92,000</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹9,200</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹5,400</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:600;">₹2,06,600</td></tr>
+              <tr style="background:var(--bg-elevated);"><td colspan="4" style="padding:var(--s-2) var(--s-3);font-size:var(--fs-xs);font-weight:700;">Grand Total</td><td style="padding:var(--s-2) var(--s-3);text-align:right;font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:700;">₹5,69,900</td></tr>
+            </tbody>
+          </table>`,
+        bidContent: `
+          <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-3);">Submitted technical bid</div>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--s-2);margin-bottom:var(--s-4);">
+            <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>TechBid_PVL_May13.pdf</div>
+            <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>MTC_F316_GV.pdf</div>
+          </div>
+          <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-3);">Line item responses</div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:var(--s-4);">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Line Item</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Amount</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Transport</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Insurance</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--fg-muted);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border);background:var(--bg-elevated);">Total</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);font-size:var(--fs-xs);">Gate Valve — 6" SS316</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹3,45,000</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹8,500</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹9,800</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:600;">₹3,63,300</td></tr>
+              <tr><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);font-size:var(--fs-xs);">Check Valve — 4" CS</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹1,92,000</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹9,200</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);">₹5,400</td><td style="padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:600;">₹2,06,600</td></tr>
+              <tr style="background:var(--bg-elevated);"><td colspan="4" style="padding:var(--s-2) var(--s-3);font-size:var(--fs-xs);font-weight:700;">Grand Total</td><td style="padding:var(--s-2) var(--s-3);text-align:right;font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:700;">₹5,69,900</td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex;justify-content:flex-end;gap:var(--s-2);margin-top:var(--s-4);padding-top:var(--s-3);border-top:1px solid var(--border);">
+            <button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:rgba(239,68,68,0.3);" onclick="openBidModal('reject')">Reject Bid</button>
+            <button class="btn btn-primary btn-sm" onclick="openBidModal('approve')">Approve Bid</button>
+          </div>`
+      },
+      2: {
+        name: 'Flowline Industries Ltd',
+        meta: 'Mumbai · Piping & Valves · Approved vendor',
+        status: 'Bid Approved',
+        prebidCount: 0,
+        tqCount: 1,
+        commContent: `
+          <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-3);">Commercial bid — Flowline Industries</div>
+          <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
+            <!-- Item 01 -->
+            <tr style="background:var(--bg-base);border-top:1px solid var(--border);">
+              <td colspan="2" style="padding:var(--s-2) var(--s-4);font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--fg-subtle);">01 · Gate Valve — 6&quot; Class 300, SS316 &nbsp;·&nbsp; Qty 24</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);color:var(--fg-muted);background:var(--bg-surface);">Base Amount</td>
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-md);font-family:var(--font-mono);text-align:right;">₹3,20,000</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);color:var(--fg-muted);background:var(--bg-surface);">Transport</td>
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-md);font-family:var(--font-mono);text-align:right;">₹12,000</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);color:var(--fg-muted);background:var(--bg-surface);">Insurance</td>
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-md);font-family:var(--font-mono);text-align:right;">₹9,800</td>
+            </tr>
+            <tr style="background:var(--bg-elevated);border-bottom:2px solid var(--border);">
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);font-weight:700;">Total — Item 01</td>
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-lg);font-family:var(--font-mono);font-weight:700;text-align:right;color:var(--success);">₹3,41,800</td>
+            </tr>
+            <!-- Item 02 -->
+            <tr style="background:var(--bg-base);">
+              <td colspan="2" style="padding:var(--s-2) var(--s-4);font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--fg-subtle);">02 · Check Valve — 4&quot; Swing Type, CS &nbsp;·&nbsp; Qty 12</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);color:var(--fg-muted);background:var(--bg-surface);">Base Amount</td>
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-md);font-family:var(--font-mono);text-align:right;">₹1,80,000</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);color:var(--fg-muted);background:var(--bg-surface);">Transport</td>
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-md);font-family:var(--font-mono);text-align:right;">₹7,000</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);color:var(--fg-muted);background:var(--bg-surface);">Insurance</td>
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-md);font-family:var(--font-mono);text-align:right;">₹5,400</td>
+            </tr>
+            <tr style="background:var(--bg-elevated);border-bottom:2px solid var(--border);">
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);font-weight:700;">Total — Item 02</td>
+              <td style="padding:var(--s-3) var(--s-4);font-size:var(--fs-lg);font-family:var(--font-mono);font-weight:700;text-align:right;color:var(--success);">₹1,92,400</td>
+            </tr>
+            <!-- Grand Total -->
+            <tr style="background:rgba(16,185,129,0.07);border-top:3px solid var(--border-strong);">
+              <td style="padding:var(--s-4);font-size:var(--fs-md);font-weight:700;color:var(--success);">Grand Total</td>
+              <td style="padding:var(--s-4);font-size:var(--fs-xl);font-family:var(--font-mono);font-weight:700;text-align:right;color:var(--success);">₹5,34,200</td>
+            </tr>
+          </table>`,
+        bidContent: `
+          <div style="display:flex;align-items:center;gap:var(--s-2);padding:var(--s-3) var(--s-4);background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:var(--r-md);margin-bottom:var(--s-4);">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+            <span style="font-size:var(--fs-sm);color:var(--success);font-weight:600;">Technical bid approved by S. Mehta · 16 May 2026</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--s-2);margin-bottom:var(--s-4);">
+            <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>TechBid_Flowline_May14.pdf</div>
+          </div>
+          <div style="background:var(--bg-elevated);border:1px dashed var(--border-strong);border-radius:var(--r-md);padding:var(--s-4);color:var(--fg-subtle);font-size:var(--fs-xs);font-style:italic;">[ Line item level bid response table — TBD ]</div>`
+      },
+      3: {
+        name: 'Atlas Pipe & Fittings Co',
+        meta: 'Pune · Piping & Valves · Approved vendor',
+        status: 'Invited',
+        prebidCount: 0,
+        tqCount: 0,
+        commContent: `<div style="text-align:center;padding:var(--s-8);color:var(--fg-subtle);"><div style="font-size:var(--fs-sm);font-weight:600;margin-bottom:4px;">No bid submitted</div><div style="font-size:var(--fs-xs);">Vendor has not submitted a technical bid yet.</div></div>`,
+        bidContent: `<div style="text-align:center;padding:var(--s-8);color:var(--fg-subtle);">
+          <svg width="32" height="32" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto var(--s-3);display:block;opacity:0.4;"><path d="M3 2h7l3 3v9H3z"/></svg>
+          <div style="font-size:var(--fs-sm);font-weight:600;margin-bottom:4px;">No bid submitted</div>
+          <div style="font-size:var(--fs-xs);">Vendor has been invited but has not submitted a technical bid yet.</div>
+        </div>`
+      },
+      4: {
+        name: 'SteelCraft Fabrications Pvt Ltd',
+        meta: 'Chennai · Structural Steel · Approved vendor',
+        status: 'Bid Submitted',
+        prebidCount: 0,
+        tqCount: 0,
+        commContent: `<div style="text-align:center;padding:var(--s-8);color:var(--fg-subtle);"><svg width="28" height="28" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto var(--s-3);display:block;opacity:0.3;"><rect x="3" y="7" width="10" height="8" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg><div style="font-size:var(--fs-sm);font-weight:600;margin-bottom:4px;">Commercial bid sealed</div><div style="font-size:var(--fs-xs);">Tech bid pending approval.</div></div>`,
+        bidContent: `
+          <div style="display:flex;flex-wrap:wrap;gap:var(--s-2);margin-bottom:var(--s-4);">
+            <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>TechBid_SteelCraft_May15.pdf</div>
+          </div>
+          <div style="background:var(--bg-elevated);border:1px dashed var(--border-strong);border-radius:var(--r-md);padding:var(--s-4);color:var(--fg-subtle);font-size:var(--fs-xs);font-style:italic;">[ Line item level bid response table — TBD ]</div>
+          <div style="display:flex;justify-content:flex-end;gap:var(--s-2);margin-top:var(--s-4);padding-top:var(--s-3);border-top:1px solid var(--border);">
+            <button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:rgba(239,68,68,0.3);" onclick="openBidModal('reject')">Reject Bid</button>
+            <button class="btn btn-primary btn-sm" onclick="openBidModal('approve')">Approve Bid</button>
+          </div>`
+      },
+      5: {
+        name: 'Bharat Pipe Works Ltd',
+        meta: 'Ahmedabad · Piping · Approved vendor',
+        status: 'Regret to Quote',
+        prebidCount: 0,
+        tqCount: 0,
+        commContent: `<div style="text-align:center;padding:var(--s-8);color:var(--fg-subtle);"><div style="font-size:var(--fs-sm);font-weight:600;margin-bottom:4px;color:var(--danger);">Regret to Quote</div><div style="font-size:var(--fs-xs);">Vendor opted out. No commercial bid.</div></div>`,
+        bidContent: `<div style="text-align:center;padding:var(--s-8);color:var(--fg-subtle);">
+          <div style="font-size:var(--fs-sm);font-weight:600;margin-bottom:4px;color:var(--danger);">Regret to Quote</div>
+          <div style="font-size:var(--fs-xs);">Vendor has explicitly opted out of this RFQ.</div>
+        </div>`
+      }
+    };
+
+    let activeVendor = null;
+
+    function openVendor(id) {
+      activeVendor = id;
+      const v = vendors[id];
+
+      // Highlight row
+      document.querySelectorAll('.vendor-table tbody tr').forEach(r => r.classList.remove('selected'));
+      document.getElementById('vrow-' + id).classList.add('selected');
+
+      // Set panel content
+      document.getElementById('panel-name').textContent = v.name;
+      document.getElementById('panel-meta').textContent = v.meta;
+      document.getElementById('bid-content').innerHTML = v.bidContent;
+      document.getElementById('comm-content').innerHTML = v.commContent || '';
+
+      // Badges
+      const pb = document.getElementById('prebid-badge');
+      const tq = document.getElementById('tq-badge');
+      pb.style.display = v.prebidCount > 0 ? 'inline-flex' : 'none';
+      pb.textContent = v.prebidCount;
+      tq.style.display = v.tqCount > 0 ? 'inline-flex' : 'none';
+      tq.textContent = v.tqCount;
+
+      // Open panel
+      document.getElementById('vendor-panel').classList.add('open');
+      document.getElementById('panel-overlay').classList.add('show');
+
+      // Reset to bid tab
+      switchPanelTab('bid', document.querySelector('.panel-tab'));
+    }
+
+    function closePanel() {
+      document.getElementById('vendor-panel').classList.remove('open');
+      document.getElementById('panel-overlay').classList.remove('show');
+      document.querySelectorAll('.vendor-table tbody tr').forEach(r => r.classList.remove('selected'));
+      activeVendor = null;
+    }
+
+    function switchPanelTab(tab, el) {
+      document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel-pane').forEach(p => p.classList.remove('active'));
+      if (el) el.classList.add('active');
+      document.getElementById('pane-' + tab).classList.add('active');
+    }
+
+    function toggleFAQ(el) {
+      const ans = el.nextElementSibling;
+      ans.classList.toggle('open');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.style.opacity = '1';
+      setTimeout(() => t.style.opacity = '0', 3000);
+    }
+
+    // ── Approve / Reject modal ──────────────────────────────
+    let pendingAction = null;
+    function openBidModal(action) {
+      pendingAction = action;
+      const isApprove = action === 'approve';
+      const m = document.getElementById('bid-modal');
+      document.getElementById('bid-modal-title').textContent = isApprove ? 'Approve Technical Bid' : 'Reject Technical Bid';
+      document.getElementById('bid-modal-title').style.color = isApprove ? 'var(--success)' : 'var(--danger)';
+      document.getElementById('bid-modal-comment').placeholder = isApprove
+        ? 'Optional: add approval remarks (e.g. conditions, clarifications accepted)…'
+        : 'Required: state the reason for rejection…';
+      document.getElementById('bid-modal-confirm').textContent = isApprove ? 'Confirm Approval' : 'Confirm Rejection';
+      document.getElementById('bid-modal-confirm').className = isApprove ? 'btn btn-primary' : 'btn btn-danger';
+      document.getElementById('bid-modal-comment').value = '';
+      m.style.display = 'flex';
+    }
+    function closeBidModal() {
+      document.getElementById('bid-modal').style.display = 'none';
+      pendingAction = null;
+    }
+    function confirmBidAction() {
+      const comment = document.getElementById('bid-modal-comment').value.trim();
+      if (pendingAction === 'reject' && !comment) {
+        document.getElementById('bid-modal-comment').style.borderColor = 'var(--danger)';
+        document.getElementById('bid-modal-comment').placeholder = 'Rejection reason is required…';
+        return;
+      }
+      const isApprove = pendingAction === 'approve';
+      closeBidModal();
+      showToast(isApprove ? 'Technical bid approved — vendor notified' : 'Bid rejected — vendor notified');
+      // Update vendor status in table
+      if (activeVendor) {
+        const badge = document.querySelector(`#vrow-${activeVendor} td:nth-child(3) span`);
+        if (badge) {
+          badge.textContent = isApprove ? 'Bid Approved' : 'Bid Rejected';
+          badge.style.background = isApprove ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)';
+          badge.style.color = isApprove ? 'var(--success)' : 'var(--danger)';
+        }
+      }
+    }
+
+    // ── FAQ modal ───────────────────────────────────────────
+    function openFAQModal(q, a) {
+      document.getElementById('faq-modal-q').value = q;
+      document.getElementById('faq-modal-a').value = a;
+      document.getElementById('faq-modal').style.display = 'flex';
+    }
+    function closeFAQModal() {
+      document.getElementById('faq-modal').style.display = 'none';
+    }
+    function confirmAddFAQ() {
+      const q = document.getElementById('faq-modal-q').value.trim();
+      const a = document.getElementById('faq-modal-a').value.trim();
+      if (!q || !a) return;
+      // Append to FAQ list
+      const faqList = document.querySelector('.sec-body .faq-item:last-of-type');
+      const count = document.querySelectorAll('.faq-item').length + 1;
+      const newItem = document.createElement('div');
+      newItem.className = 'faq-item';
+      newItem.innerHTML = `
+        <div class="faq-q" onclick="toggleFAQ(this)">
+          <span>Q${count} — ${q}</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+        <div class="faq-a open">${a}</div>`;
+      faqList.parentNode.insertBefore(newItem, faqList.nextSibling);
+      closeFAQModal();
+      showToast('FAQ added and broadcast to all vendors');
+    }
+  </script>
+</body>
+</html>

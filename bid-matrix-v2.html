@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aker — Comparison Matrix · RFQ-2026-041</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .v2-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.3); border-radius: 999px;
+      font-size: 10px; font-weight: 600; color: #a855f7;
+      letter-spacing: 0.06em; margin-bottom: var(--s-4);
+    }
+
+    /* ── Matrix table ──────────────────────────────────────── */
+    .matrix-wrap {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: var(--s-5);
+    }
+
+    .mx { width: 100%; border-collapse: collapse; }
+
+    /* Column header */
+    .mx thead th {
+      padding: var(--s-4);
+      border-bottom: 2px solid var(--border);
+      font-size: var(--fs-xs); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      white-space: nowrap;
+      vertical-align: bottom;
+    }
+    .th-label {
+      text-align: left; color: var(--fg-muted);
+      background: var(--bg-elevated);
+      min-width: 200px;
+    }
+    .th-vendor {
+      text-align: right; min-width: 160px;
+      border-left: 1px solid var(--border);
+    }
+    .th-vendor.l1 {
+      background: rgba(16,185,129,0.08);
+      color: var(--success);
+      border-left: 2px solid rgba(16,185,129,0.3);
+    }
+    .th-vendor.l2 { background: var(--bg-elevated); color: var(--fg-muted); }
+    .th-vendor.l3 { background: var(--bg-elevated); color: var(--fg-muted); }
+    .th-vendor-name { font-size: var(--fs-sm); font-weight: 700; }
+    .th-vendor-meta { font-size: var(--fs-xs); font-weight: 400; opacity: 0.75; margin-top: 2px; }
+    .th-rank {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%;
+      font-size: 11px; font-weight: 700; margin-bottom: var(--s-1);
+    }
+    .th-rank.l1 { background: var(--success); color: white; }
+    .th-rank.l2 { background: var(--bg-hover); color: var(--fg-muted); border: 1px solid var(--border); }
+    .th-rank.l3 { background: var(--bg-hover); color: var(--fg-muted); border: 1px solid var(--border); }
+
+    /* Section divider (line item group header) */
+    .mx-section {
+      background: var(--bg-base);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .mx-section td {
+      padding: var(--s-2) var(--s-4);
+      font-size: var(--fs-xs); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--fg-subtle);
+    }
+
+    /* Regular data rows */
+    .mx tbody tr.data-row td {
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--fs-sm); vertical-align: middle;
+    }
+    .mx tbody tr.data-row:last-of-type td { border-bottom: none; }
+
+    .td-label {
+      color: var(--fg-muted); background: var(--bg-surface);
+      font-size: var(--fs-xs);
+    }
+    .td-amount {
+      text-align: right; font-family: var(--font-mono);
+      border-left: 1px solid var(--border-subtle);
+    }
+    .td-amount.l1-col {
+      background: rgba(16,185,129,0.03);
+      border-left: 2px solid rgba(16,185,129,0.15);
+    }
+
+    /* Adjustment row */
+    .mx-adj td {
+      padding: var(--s-2) var(--s-4);
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: top;
+    }
+    .adj-label {
+      font-size: var(--fs-xs); font-weight: 600; color: var(--fg-muted);
+      padding-top: var(--s-3);
+    }
+    .adj-cell {
+      border-left: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+    }
+    .adj-cell.l1-col {
+      border-left: 2px solid rgba(16,185,129,0.15);
+      background: rgba(16,185,129,0.02);
+    }
+    .adj-input {
+      width: 100%; padding: 5px 8px;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      color: var(--fg); font-family: var(--font-mono);
+      font-size: var(--fs-sm); text-align: right;
+      transition: border-color 0.12s;
+    }
+    .adj-input:focus { outline: none; border-color: var(--border-strong); box-shadow: 0 0 0 2px rgba(255,255,255,0.06); }
+    .adj-why {
+      width: 100%; margin-top: 5px; padding: 4px 7px;
+      background: var(--bg-base);
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      color: var(--fg-muted); font-size: 11px; font-family: var(--font-sans);
+      resize: none; height: 46px; line-height: 1.4;
+    }
+    .adj-why:focus { outline: none; border-color: var(--border-strong); }
+    .adj-why::placeholder { color: var(--fg-subtle); font-style: italic; }
+    .adj-hint { font-size: 10px; color: var(--fg-subtle); margin-top: 3px; }
+
+    /* Total rows */
+    .mx-total td {
+      padding: var(--s-3) var(--s-4);
+      border-top: 2px solid var(--border);
+      border-bottom: 1px solid var(--border-subtle);
+      font-weight: 700;
+    }
+    .mx-total .td-label { font-size: var(--fs-sm); color: var(--fg); background: var(--bg-elevated); }
+    .mx-total .td-amount { font-size: var(--fs-md); background: var(--bg-elevated); }
+    .mx-total .td-amount.l1-col { color: var(--success); background: rgba(16,185,129,0.08); }
+
+    /* Grand total */
+    .mx-grand td {
+      padding: var(--s-4);
+      border-top: 3px solid var(--border-strong);
+      font-weight: 700;
+    }
+    .mx-grand .td-label { font-size: var(--fs-md); color: var(--fg); background: var(--bg-elevated); }
+    .mx-grand .td-amount { font-size: var(--fs-xl); font-family: var(--font-mono); background: var(--bg-elevated); }
+    .mx-grand .td-amount.l1-col { color: var(--success); background: rgba(16,185,129,0.10); }
+
+    /* Delta badge */
+    .delta {
+      display: inline-block; font-size: 10px; font-weight: 600;
+      padding: 1px 5px; border-radius: 3px; margin-left: 4px;
+      font-family: var(--font-mono); vertical-align: middle;
+    }
+    .delta.up { background: rgba(239,68,68,0.10); color: var(--danger); }
+
+    /* Footer */
+    .matrix-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-4) var(--s-5);
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: var(--s-3) var(--s-4);
+      font-size: var(--fs-sm); color: var(--fg); display: flex; align-items: center; gap: var(--s-2);
+      box-shadow: var(--shadow-md); z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    .mono { font-family: var(--font-mono); }
+  
+    /* Back navigation */
+    .back-nav {
+      display: flex; align-items: center; gap: var(--s-2);
+      margin-bottom: var(--s-5);
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); font-weight: 500;
+      color: var(--fg-muted); text-decoration: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    .back-btn:hover { color: var(--fg); background: var(--bg-hover); }
+    .back-btn svg { flex-shrink: 0; }
+    .back-crumb-sep { color: var(--border-strong); font-size: var(--fs-sm); }
+    .back-crumb-current { font-size: var(--fs-sm); color: var(--fg); font-weight: 500; }
+  </style>
+</head>
+<body class="app">
+
+  <!-- ── Nav ─────────────────────────────────────────────────── -->
+  <aside class="nav">
+    <div class="nav-brand">
+      <button class="hamburger-btn" onclick="toggleNav()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+      <div class="nav-brand-text">
+        <div class="nav-brand-name">Procure</div>
+        <div class="nav-brand-sub">Procurement</div>
+      </div>
+    </div>
+        <div class="nav-items">
+      <a class="nav-item" href="dashboard.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header" href="clients.html" onclick="toggleGroup(this)">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V7l6-4 6 4v7zM6 14V9h4v5"/></svg>
+          <span>Master Data</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="clients.html">Clients</a>
+          <a class="nav-item nav-sub-item" href="projects.html">Projects</a>
+          <a class="nav-item nav-sub-item" href="vendor-categories.html">Categories</a>
+          <a class="nav-item nav-sub-item" href="terms-conditions.html">Terms &amp; Conditions</a>
+          <a class="nav-item nav-sub-item" href="payment-terms.html">Payment Terms</a>
+          <a class="nav-item nav-sub-item" href="inco-terms.html">Inco Terms</a>
+          <a class="nav-item nav-sub-item" href="uom.html">Unit of Measure</a>
+          <a class="nav-item nav-sub-item" href="additional-costs.html">Additional Costs</a>
+          <a class="nav-item nav-sub-item" href="vendors.html">Vendors</a>
+        </div>
+      </div>
+      <a class="nav-item" href="pr-list-v2.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M5 8h6M5 11h4"/></svg>
+        <span>Purchase Requisitions</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header expanded has-active" href="rfq-list-v2.html">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2z"/><path d="M2 4l6 5 6-5"/></svg>
+          <span>RFQs</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item  active" href="rfq-list-v2.html">All RFQs</a>
+          <a class="nav-item nav-sub-item" href="rfq-create-v2.html">New RFQ</a>
+        </div>
+      </div>
+      <a class="nav-item" href="purchase-orders.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l1.5 8.5a1 1 0 0 0 1 .85h7a1 1 0 0 0 1-.85L14 4"/><path d="M2 4h12M6 7v3M10 7v3"/></svg>
+        <span>Purchase Orders</span>
+      </a>
+    </div>
+    <div class="nav-footer">
+      <div class="user-card">
+        <div class="avatar" style="background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3);">VN</div>
+        <div>
+          <div class="user-name">V. Nair</div>
+          <div class="user-email">Purchase</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="nav-backdrop" id="nav-backdrop" onclick="closeNav()"></div>
+
+  <!-- ── Main ──────────────────────────────────────────────────── -->
+  <main class="main" style="max-width:none;">
+
+    
+
+    <div class="back-nav">
+      <a class="back-btn" href="rfq-detail-v2.html"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4L6 8l4 4"/></svg> RFQ-2026-041</a>
+      <span class="back-crumb-sep">/</span>
+      <span class="back-crumb-current">Comparison Matrix</span>
+    </div>
+
+    <!-- Page header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--s-5);">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-2);">
+          <h1 style="font-size:var(--fs-2xl);font-weight:700;letter-spacing:-0.01em;">Comparison Matrix</h1>
+          <span class="badge" style="background:rgba(168,85,247,0.10);color:#a855f7;">Commercial Evaluation</span>
+        </div>
+        <div style="font-size:var(--fs-sm);color:var(--fg-muted);">RFQ-2026-041 · Mechanical Piping — Utility Deck · 3 vendors · 3 line items</div>
+      </div>
+      <div style="display:flex;gap:var(--s-2);">
+        <a href="rfq-detail-v2.html" class="btn btn-ghost btn-sm">← Back to RFQ</a>
+        <button class="btn btn-ghost btn-sm" onclick="showToast('Matrix exported to Excel')">Export</button>
+      </div>
+    </div>
+
+
+    <!-- ── MATRIX TABLE ──────────────────────────────────────── -->
+    <div class="matrix-wrap">
+      <table class="mx" id="matrix-table">
+        <thead>
+          <!-- Select vendor row — pinned at top, same height across all columns -->
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <th class="th-label" style="padding:var(--s-2) var(--s-4);font-size:var(--fs-xs);color:var(--fg-subtle);font-weight:400;text-transform:none;letter-spacing:0;">Select vendor to approve</th>
+            <th class="th-vendor l1" style="padding:var(--s-2) var(--s-4);border-bottom:none;">
+              <label style="display:flex;align-items:center;justify-content:flex-end;gap:6px;cursor:pointer;">
+                <span style="font-size:var(--fs-xs);color:var(--fg-muted);font-weight:500;text-transform:none;letter-spacing:0;">Select</span>
+                <input type="checkbox" class="vendor-select" value="l1" onchange="onVendorSelect(this)" style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;">
+              </label>
+            </th>
+            <th class="th-vendor l2" style="padding:var(--s-2) var(--s-4);border-bottom:none;">
+              <label style="display:flex;align-items:center;justify-content:flex-end;gap:6px;cursor:pointer;">
+                <span style="font-size:var(--fs-xs);color:var(--fg-muted);font-weight:500;text-transform:none;letter-spacing:0;">Select</span>
+                <input type="checkbox" class="vendor-select" value="l2" onchange="onVendorSelect(this)" style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;">
+              </label>
+            </th>
+            <th class="th-vendor l3" style="padding:var(--s-2) var(--s-4);border-bottom:none;">
+              <label style="display:flex;align-items:center;justify-content:flex-end;gap:6px;cursor:pointer;">
+                <span style="font-size:var(--fs-xs);color:var(--fg-muted);font-weight:500;text-transform:none;letter-spacing:0;">Select</span>
+                <input type="checkbox" class="vendor-select" value="l3" onchange="onVendorSelect(this)" style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;">
+              </label>
+            </th>
+          </tr>
+          <!-- Vendor name row -->
+          <tr>
+            <th class="th-label">Line Item / Cost Head</th>
+            <!-- L1 first — lowest price -->
+            <th class="th-vendor l1">
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+                <div class="th-vendor-name">Flowline Industries</div>
+                <div class="th-vendor-meta">Mumbai · Piping &amp; Valves</div>
+                <span class="badge badge-success" style="font-size:10px;margin-top:3px;">Lowest bid</span>
+              </div>
+            </th>
+            <th class="th-vendor l2">
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+                <div class="th-vendor-name">Precision Valves</div>
+                <div class="th-vendor-meta">Nashik · Piping &amp; Valves</div>
+              </div>
+            </th>
+            <th class="th-vendor l3">
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+                <div class="th-vendor-name">SteelCraft Fabrications</div>
+                <div class="th-vendor-meta">Chennai · Piping</div>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- ══ LINE ITEM 1 ══ -->
+          <tr class="mx-section">
+            <td colspan="4">01 · Gate Valve — 6" Class 300, SS316 &nbsp;·&nbsp; Qty 24</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Base Amount</td>
+            <td class="td-amount l1-col">₹3,20,000</td>
+            <td class="td-amount">₹3,45,000</td>
+            <td class="td-amount">₹3,60,000</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Transport</td>
+            <td class="td-amount l1-col">₹12,000</td>
+            <td class="td-amount">₹8,500</td>
+            <td class="td-amount">₹14,000</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Insurance</td>
+            <td class="td-amount l1-col">₹9,800</td>
+            <td class="td-amount" style="color:var(--fg-muted);">₹9,800 <span style="font-size:10px;">(adj)</span></td>
+            <td class="td-amount">₹9,800</td>
+          </tr>
+          <!-- Adjustment row — editable -->
+          <tr class="mx-adj">
+            <td class="adj-label">
+              Adjustment
+              <div style="font-size:10px;color:var(--fg-subtle);font-weight:400;margin-top:2px;">+ to add · − to subtract</div>
+            </td>
+            <td class="adj-cell l1-col">
+              <input class="adj-input" type="number" value="0" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="1" data-vendor="l1" />
+              <textarea class="adj-why" placeholder="Why adj?"></textarea>
+            </td>
+            <td class="adj-cell">
+              <input class="adj-input" type="number" value="0" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="1" data-vendor="l2" />
+              <textarea class="adj-why" placeholder="Why adj? e.g. insurance omitted — normalized at 0.25%"></textarea>
+            </td>
+            <td class="adj-cell">
+              <input class="adj-input" type="number" value="4200" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="1" data-vendor="l3" />
+              <textarea class="adj-why" placeholder="Why adj?">FOB quoted, RFQ specifies CIF — added ₹4,200 estimated freight to Mumbai Port</textarea>
+            </td>
+          </tr>
+          <tr class="mx-total">
+            <td class="td-label">Total — Item 01</td>
+            <td class="td-amount l1-col" id="total-1-l1">₹3,41,800</td>
+            <td class="td-amount" id="total-1-l2">₹3,63,300</td>
+            <td class="td-amount" id="total-1-l3">₹3,88,000</td>
+          </tr>
+
+          <!-- ══ LINE ITEM 2 ══ -->
+          <tr class="mx-section">
+            <td colspan="4">02 · Check Valve — 4" Swing Type, CS &nbsp;·&nbsp; Qty 12</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Base Amount</td>
+            <td class="td-amount l1-col">₹1,80,000</td>
+            <td class="td-amount">₹1,95,000</td>
+            <td class="td-amount">₹1,88,000</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Transport</td>
+            <td class="td-amount l1-col">₹7,000</td>
+            <td class="td-amount">₹6,200</td>
+            <td class="td-amount">₹7,500</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Insurance</td>
+            <td class="td-amount l1-col">₹5,400</td>
+            <td class="td-amount">₹5,400</td>
+            <td class="td-amount">₹5,400</td>
+          </tr>
+          <tr class="mx-adj">
+            <td class="adj-label">
+              Adjustment
+              <div style="font-size:10px;color:var(--fg-subtle);font-weight:400;margin-top:2px;">+ to add · − to subtract</div>
+            </td>
+            <td class="adj-cell l1-col">
+              <input class="adj-input" type="number" value="0" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="2" data-vendor="l1" />
+              <textarea class="adj-why" placeholder="Why adj?"></textarea>
+            </td>
+            <td class="adj-cell">
+              <input class="adj-input" type="number" value="0" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="2" data-vendor="l2" />
+              <textarea class="adj-why" placeholder="Why adj?"></textarea>
+            </td>
+            <td class="adj-cell">
+              <input class="adj-input" type="number" value="0" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="2" data-vendor="l3" />
+              <textarea class="adj-why" placeholder="Why adj?"></textarea>
+            </td>
+          </tr>
+          <tr class="mx-total">
+            <td class="td-label">Total — Item 02</td>
+            <td class="td-amount l1-col" id="total-2-l1">₹1,92,400</td>
+            <td class="td-amount" id="total-2-l2">₹2,06,600</td>
+            <td class="td-amount" id="total-2-l3">₹2,00,900</td>
+          </tr>
+
+          <!-- ══ LINE ITEM 3 ══ -->
+          <tr class="mx-section">
+            <td colspan="4">03 · Pipe Spool — 8" SCH 40, SS316L &nbsp;·&nbsp; 80 m</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Base Amount</td>
+            <td class="td-amount l1-col">₹2,94,200</td>
+            <td class="td-amount">₹3,10,000</td>
+            <td class="td-amount">₹3,36,000</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Transport</td>
+            <td class="td-amount l1-col">₹9,000</td>
+            <td class="td-amount">₹4,300</td>
+            <td class="td-amount">₹10,500</td>
+          </tr>
+          <tr class="data-row">
+            <td class="td-label">Insurance</td>
+            <td class="td-amount l1-col">₹8,826</td>
+            <td class="td-amount" style="color:var(--fg-muted);">₹8,826 <span style="font-size:10px;">(adj)</span></td>
+            <td class="td-amount" style="color:var(--fg-muted);">₹8,826 <span style="font-size:10px;">(adj)</span></td>
+          </tr>
+          <tr class="mx-adj">
+            <td class="adj-label">
+              Adjustment
+              <div style="font-size:10px;color:var(--fg-subtle);font-weight:400;margin-top:2px;">+ to add · − to subtract</div>
+            </td>
+            <td class="adj-cell l1-col">
+              <input class="adj-input" type="number" value="0" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="3" data-vendor="l1" />
+              <textarea class="adj-why" placeholder="Why adj?"></textarea>
+            </td>
+            <td class="adj-cell">
+              <input class="adj-input" type="number" value="0" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="3" data-vendor="l2" />
+              <textarea class="adj-why" placeholder="Why adj?">Insurance omitted by vendor — normalized at 0.25% of supply value (₹8,826)</textarea>
+            </td>
+            <td class="adj-cell">
+              <input class="adj-input" type="number" value="0" placeholder="0"
+                onchange="recalc()" oninput="recalc()"
+                data-item="3" data-vendor="l3" />
+              <textarea class="adj-why" placeholder="Why adj?">Insurance omitted by vendor — normalized at 0.25% of supply value (₹8,826)</textarea>
+            </td>
+          </tr>
+          <tr class="mx-total">
+            <td class="td-label">Total — Item 03</td>
+            <td class="td-amount l1-col" id="total-3-l1">₹3,12,026</td>
+            <td class="td-amount" id="total-3-l2">₹3,23,126</td>
+            <td class="td-amount" id="total-3-l3">₹3,55,326</td>
+          </tr>
+
+          <!-- ══ GRAND TOTAL ══ -->
+          <tr class="mx-grand">
+            <td class="td-label">Grand Total</td>
+            <td class="td-amount l1-col" id="grand-l1">₹8,46,226</td>
+            <td class="td-amount" id="grand-l2">₹8,93,026</td>
+            <td class="td-amount" id="grand-l3">₹9,44,226</td>
+          </tr>
+
+        </tbody>
+      </table>
+
+      <div class="matrix-footer">
+        <div style="font-size:var(--fs-xs);color:var(--fg-muted);max-width:560px;line-height:1.5;">
+          All adjustments are logged in the audit trail. Totals are recalculated in real time. Approved vendor and amount will be locked on PO issuance.
+        </div>
+        <button class="btn btn-primary" id="send-approval-btn" onclick="sendForApproval()" disabled style="opacity:0.35;cursor:not-allowed;">
+          Send for Approval →
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    function toggleGroup(el) {
+      el.classList.toggle('expanded');
+    }
+    function toggleNav() { document.querySelector('.nav').classList.toggle('open'); document.getElementById('nav-backdrop').classList.toggle('open'); }
+    function closeNav()  { document.querySelector('.nav').classList.remove('open'); document.getElementById('nav-backdrop').classList.remove('open'); }
+
+    // Base values (excluding adjustment) per item per vendor
+    const base = {
+      '1': { l1: 341800, l2: 363300, l3: 388000 },
+      '2': { l1: 192400, l2: 206600, l3: 200900 },
+      '3': { l1: 312026, l2: 323126, l3: 355326 },
+    };
+
+    function fmt(n) {
+      return '₹' + Math.abs(n).toLocaleString('en-IN');
+    }
+
+    function recalc() {
+      const vendors = ['l1', 'l2', 'l3'];
+      const items = ['1', '2', '3'];
+      const grandTotals = { l1: 0, l2: 0, l3: 0 };
+
+      items.forEach(item => {
+        vendors.forEach(v => {
+          const inp = document.querySelector(`input[data-item="${item}"][data-vendor="${v}"]`);
+          const adj = inp ? (parseFloat(inp.value) || 0) : 0;
+          const total = base[item][v] + adj;
+          const el = document.getElementById(`total-${item}-${v}`);
+          if (el) {
+            el.textContent = fmt(total);
+            el.style.color = adj !== 0 ? 'var(--warning)' : (v === 'l1' ? 'var(--success)' : '');
+          }
+          grandTotals[v] += total;
+        });
+      });
+
+      // Update grand totals and re-rank
+      const totals = [
+        { v: 'l1', val: grandTotals.l1 },
+        { v: 'l2', val: grandTotals.l2 },
+        { v: 'l3', val: grandTotals.l3 },
+      ].sort((a, b) => a.val - b.val);
+
+      vendors.forEach(v => {
+        const el = document.getElementById(`grand-${v}`);
+        if (el) {
+          el.textContent = fmt(grandTotals[v]);
+          const rank = totals.findIndex(t => t.v === v);
+          el.style.color = rank === 0 ? 'var(--success)' : (rank === 1 ? 'var(--fg)' : 'var(--fg-muted)');
+        }
+      });
+    }
+
+    function onVendorSelect(el) {
+      // Uncheck all others (single select)
+      document.querySelectorAll('.vendor-select').forEach(cb => {
+        if (cb !== el) cb.checked = false;
+      });
+      const anySelected = !!document.querySelector('.vendor-select:checked');
+      const btn = document.getElementById('send-approval-btn');
+      btn.disabled = !anySelected;
+      btn.style.opacity = anySelected ? '1' : '0.35';
+      btn.style.cursor = anySelected ? 'pointer' : 'not-allowed';
+    }
+
+    function sendForApproval() {
+      showToast('Matrix sent for PO approval — Approver notified');
+      setTimeout(() => window.location.href = 'po-detail-approver.html', 2000);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Init on load
+    recalc();
+  </script>
+</body>
+</html>

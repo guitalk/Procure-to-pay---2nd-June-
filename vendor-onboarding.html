@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aker Procurement — Vendor Registration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Vendor portal layout (no sidebar) ─────────────────── */
+    body { background: var(--bg-base); }
+
+    .portal-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-4) var(--s-8);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 30;
+    }
+    .portal-brand { display: flex; align-items: center; gap: var(--s-3); }
+    .portal-brand-logo {
+      width: 32px; height: 32px; border-radius: var(--r-md);
+      background: var(--accent); display: grid; place-items: center; color: white;
+      font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+    }
+    .portal-brand-name { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+    .portal-brand-sub  { font-size: var(--fs-xs); color: var(--fg-muted); }
+
+    /* Two-column layout: sidebar progress + main form */
+    .onboard-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 57px);
+    }
+
+    /* Sidebar */
+    .sidebar-progress {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      padding: var(--s-6) var(--s-5);
+      position: sticky; top: 57px; height: calc(100vh - 57px);
+      overflow-y: auto;
+    }
+    .sidebar-title {
+      font-size: var(--fs-xs); font-weight: var(--fw-medium);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); margin-bottom: var(--s-4);
+    }
+    .sp-item {
+      display: flex; align-items: flex-start; gap: var(--s-3);
+      padding: var(--s-2) 0; margin-bottom: var(--s-1); cursor: pointer;
+    }
+    .sp-dot {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 10px; font-weight: var(--fw-semibold);
+      margin-top: 1px;
+    }
+    .sp-dot.done    { background: var(--success); color: white; }
+    .sp-dot.active  { background: var(--accent);  color: white; }
+    .sp-dot.pending { background: var(--bg-elevated); color: var(--fg-subtle); border: 1.5px solid var(--border); }
+    .sp-label { font-size: var(--fs-sm); font-weight: var(--fw-medium); line-height: 1.3; }
+    .sp-sub   { font-size: var(--fs-xs); color: var(--fg-subtle); margin-top: 2px; }
+    .sp-item.active .sp-label { color: var(--accent); }
+    .sp-item.done   .sp-label { color: var(--fg-muted); }
+
+    .sp-connector {
+      width: 1px; height: 20px; background: var(--border);
+      margin-left: 11px; margin-top: -4px; margin-bottom: -4px;
+    }
+    .sp-connector.done { background: var(--success); }
+
+    /* Save chip */
+    .save-chip {
+      display: flex; align-items: center; gap: 6px;
+      font-size: var(--fs-xs); color: var(--fg-subtle);
+    }
+
+    /* Form area */
+    .onboard-main {
+      padding: var(--s-8);
+      padding-bottom: 120px;
+      overflow-y: auto;
+      max-width: 760px;
+    }
+
+    /* Form section cards */
+    .form-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: var(--s-6);
+      scroll-margin-top: 80px;
+    }
+    .form-section-head {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-4) var(--s-5);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .form-section-icon {
+      width: 30px; height: 30px; border-radius: var(--r-sm);
+      background: var(--accent-soft); color: var(--accent);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .form-section-icon.done-icon { background: rgba(16,185,129,0.12); color: var(--success); }
+    .form-section-title { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+    .form-section-sub   { font-size: var(--fs-sm); color: var(--fg-muted); margin-top: 1px; }
+    .form-body { padding: var(--s-5); }
+
+    .form-grid   { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); }
+    .form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); }
+    .col-span-2  { grid-column: span 2; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field-label {
+      font-size: var(--fs-xs); font-weight: var(--fw-medium);
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted);
+    }
+    .field-req { color: var(--danger); margin-left: 2px; }
+    .field-input {
+      width: 100%; padding: 8px var(--s-3);
+      background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--r-md);
+      color: var(--fg); font-size: var(--fs-md); font-family: var(--font-sans);
+      transition: border-color 0.12s;
+    }
+    .field-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .field-input::placeholder { color: var(--fg-subtle); }
+    .field-input.sel {
+      cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 16 16' fill='none' stroke='%2371717a' stroke-width='1.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px;
+    }
+    .field-hint { font-size: var(--fs-xs); color: var(--fg-subtle); }
+    .field-verified {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px var(--s-3);
+      background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.20);
+      border-radius: var(--r-md); font-size: var(--fs-md); color: var(--success);
+      font-weight: var(--fw-medium);
+    }
+
+    /* OTP block */
+    .otp-block {
+      background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.18);
+      border-radius: var(--r-md); padding: var(--s-4); margin-top: var(--s-3);
+    }
+    .otp-digits { display: flex; gap: var(--s-2); margin: var(--s-3) 0; }
+    .otp-digit {
+      width: 44px; height: 48px; border-radius: var(--r-md);
+      background: var(--bg-base); border: 1px solid var(--border);
+      text-align: center; font-size: var(--fs-xl); font-family: var(--font-mono);
+      color: var(--fg); font-weight: var(--fw-semibold);
+    }
+    .otp-digit:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .otp-resend { font-size: var(--fs-xs); color: var(--fg-subtle); }
+    .otp-resend a { color: var(--accent); cursor: pointer; }
+
+    /* Document checklist */
+    .doc-checklist { display: flex; flex-direction: column; gap: var(--s-3); }
+    .doc-item {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-3) var(--s-4);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+    .doc-item.uploaded { border-color: rgba(16,185,129,0.25); background: rgba(16,185,129,0.04); }
+    .doc-icon {
+      width: 32px; height: 32px; border-radius: var(--r-sm);
+      background: var(--bg-hover); color: var(--fg-muted);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .doc-icon.uploaded-icon { background: rgba(16,185,129,0.12); color: var(--success); }
+    .doc-name  { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--fg); }
+    .doc-req   { font-size: var(--fs-xs); color: var(--fg-subtle); margin-top: 2px; }
+    .doc-file  { font-size: var(--fs-xs); color: var(--success); font-family: var(--font-mono); margin-top: 2px; }
+    .doc-upload-btn {
+      margin-left: auto; padding: 5px var(--s-3);
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      background: none; color: var(--fg-muted); font-size: var(--fs-xs);
+      cursor: pointer; white-space: nowrap; transition: all 0.12s;
+    }
+    .doc-upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .doc-uploaded-tag {
+      margin-left: auto; display: flex; align-items: center; gap: 4px;
+      font-size: var(--fs-xs); color: var(--success);
+    }
+
+    /* Declaration checkbox */
+    .decl-check {
+      display: flex; align-items: flex-start; gap: var(--s-3);
+      padding: var(--s-4); background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: var(--r-md); margin-bottom: var(--s-3);
+    }
+    .decl-check input[type=checkbox] { margin-top: 2px; accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
+    .decl-text { font-size: var(--fs-sm); color: var(--fg-muted); line-height: 1.5; }
+    .decl-text strong { color: var(--fg); }
+
+    /* Sticky footer */
+    .portal-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-4) var(--s-8);
+      background: var(--bg-elevated); border-top: 1px solid var(--border);
+      z-index: 20;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: var(--s-3) var(--s-4);
+      font-size: var(--fs-sm); color: var(--fg); display: flex; align-items: center; gap: var(--s-2);
+      box-shadow: var(--shadow-md); z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body style="margin:0;">
+
+  <!-- Portal top bar (no app nav — vendor-facing) -->
+  <div class="portal-top">
+    <div class="portal-brand">
+      <div class="portal-brand-logo">P</div>
+      <div>
+        <div class="portal-brand-name">Aker Procurement Portal</div>
+        <div class="portal-brand-sub">Vendor Self-Registration</div>
+      </div>
+    </div>
+    <div class="save-chip">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 1 0 12 0A6 6 0 0 0 2 8Z"/><path d="M8 5v3.5l2 1"/></svg>
+      Progress auto-saved
+    </div>
+  </div>
+
+  <div class="onboard-layout">
+
+    <!-- ── Sidebar Progress ────────────────────────────────── -->
+    <div class="sidebar-progress">
+      <div class="sidebar-title">Registration Steps</div>
+
+      <div class="sp-item done" onclick="scrollTo('sec-verify')">
+        <div class="sp-dot done">✓</div>
+        <div>
+          <div class="sp-label">Email Verification</div>
+          <div class="sp-sub">OTP confirmed</div>
+        </div>
+      </div>
+      <div class="sp-connector done"></div>
+
+      <div class="sp-item done" onclick="scrollTo('sec-company')">
+        <div class="sp-dot done">✓</div>
+        <div>
+          <div class="sp-label">Company Details</div>
+          <div class="sp-sub">GST + MSME fetched</div>
+        </div>
+      </div>
+      <div class="sp-connector done"></div>
+
+      <div class="sp-item active" onclick="scrollTo('sec-contact')">
+        <div class="sp-dot active">3</div>
+        <div>
+          <div class="sp-label">Authorized Contact</div>
+          <div class="sp-sub">In progress</div>
+        </div>
+      </div>
+      <div class="sp-connector"></div>
+
+      <div class="sp-item" onclick="scrollTo('sec-docs')">
+        <div class="sp-dot pending">4</div>
+        <div>
+          <div class="sp-label">Documents</div>
+          <div class="sp-sub">3 / 6 uploaded</div>
+        </div>
+      </div>
+      <div class="sp-connector"></div>
+
+      <div class="sp-item" onclick="scrollTo('sec-declaration')">
+        <div class="sp-dot pending">5</div>
+        <div>
+          <div class="sp-label">Declaration &amp; Submit</div>
+          <div class="sp-sub">Pending</div>
+        </div>
+      </div>
+
+      <div style="margin-top:var(--s-6); padding-top:var(--s-4); border-top:1px solid var(--border);">
+        <div style="font-size:var(--fs-xs); color:var(--fg-subtle); margin-bottom:var(--s-2);">Profile completeness</div>
+        <div style="height:6px; background:var(--bg-elevated); border-radius:3px; overflow:hidden;">
+          <div style="width:55%; height:100%; background:var(--accent); border-radius:3px;"></div>
+        </div>
+        <div style="font-size:var(--fs-xs); color:var(--fg-subtle); margin-top:6px; font-family:var(--font-mono);">55% complete</div>
+      </div>
+
+      <div style="margin-top:var(--s-5); padding:var(--s-3) var(--s-4); background:var(--bg-elevated); border-radius:var(--r-md); border:1px solid var(--border);">
+        <div style="font-size:var(--fs-xs); color:var(--fg-subtle); margin-bottom:4px;">Invited by</div>
+        <div style="font-size:var(--fs-sm); color:var(--fg); font-weight:var(--fw-medium);">Aker Solutions ASA</div>
+        <div style="font-size:var(--fs-xs); color:var(--fg-muted); margin-top:2px;">FPSO Njord Refit — Phase 3</div>
+      </div>
+    </div>
+
+    <!-- ── Main form ──────────────────────────────────────── -->
+    <div class="onboard-main">
+
+      <div style="margin-bottom:var(--s-6);">
+        <h1 style="font-size:var(--fs-2xl); font-weight:var(--fw-semibold); letter-spacing:-0.01em; margin-bottom:4px;">Vendor Registration</h1>
+        <div style="font-size:var(--fs-sm); color:var(--fg-muted);">Complete all sections to submit your profile for Purchase review. Your data is encrypted and stored securely.</div>
+      </div>
+
+      <!-- ── SECTION 1: Email Verification (completed) ─────── -->
+      <div class="form-section" id="sec-verify">
+        <div class="form-section-head">
+          <div class="form-section-icon done-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Email Verification</div>
+            <div class="form-section-sub">One-time password sent to your registered business email</div>
+          </div>
+          <div style="margin-left:auto;"><span class="badge badge-success">Verified</span></div>
+        </div>
+        <div class="form-body">
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label">Business Email</label>
+              <div class="field-verified">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                r.kapoor@precisionvalves.in
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">OTP Status</label>
+              <div class="field-verified">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                Verified · 12 May 2026, 10:02 IST
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: Company Details (completed) ─────────── -->
+      <div class="form-section" id="sec-company">
+        <div class="form-section-head">
+          <div class="form-section-icon done-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Company Details</div>
+            <div class="form-section-sub">Legal entity information — auto-fetched via GST validation</div>
+          </div>
+          <div style="margin-left:auto;"><span class="badge badge-success">Verified</span></div>
+        </div>
+        <div class="form-body">
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field">
+              <label class="field-label">GST Number <span class="field-req">*</span></label>
+              <div class="field-verified">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                27AAACF1234P1Z5
+              </div>
+              <div class="field-hint">Validated against GSTN registry</div>
+            </div>
+            <div class="field">
+              <label class="field-label">PAN Number <span class="field-req">*</span></label>
+              <div class="field-verified">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                AAACF1234P
+              </div>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field col-span-2">
+              <label class="field-label">Registered Company Name</label>
+              <input class="field-input" value="Precision Valves &amp; Controls Pvt Ltd" />
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field">
+              <label class="field-label">Company Type</label>
+              <select class="field-input sel">
+                <option selected>Private Limited</option>
+                <option>Public Limited</option>
+                <option>LLP</option>
+                <option>Proprietorship</option>
+                <option>Partnership</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Year of Incorporation</label>
+              <input class="field-input" value="2003" />
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field">
+              <label class="field-label">MSME Registration</label>
+              <select class="field-input sel">
+                <option>Not Applicable</option>
+                <option selected>Micro</option>
+                <option>Small</option>
+                <option>Medium</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">MSME Number</label>
+              <div class="field-verified" style="font-size:var(--fs-sm);">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                UDYAM-MH-12-0034521
+              </div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field col-span-2">
+              <label class="field-label">Registered Address</label>
+              <textarea class="field-input" style="min-height:64px;">Plot 47, MIDC Industrial Area, Ambad, Nashik — 422010, Maharashtra, India</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: Authorized Contact (active) ─────────── -->
+      <div class="form-section" id="sec-contact">
+        <div class="form-section-head">
+          <div class="form-section-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="2.5"/><path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Authorized Contact</div>
+            <div class="form-section-sub">Primary point of contact for all procurement correspondence</div>
+          </div>
+          <div style="margin-left:auto;"><span class="badge badge-warning">In Progress</span></div>
+        </div>
+        <div class="form-body">
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field">
+              <label class="field-label">Contact Name <span class="field-req">*</span></label>
+              <input class="field-input" value="R. Kapoor" />
+            </div>
+            <div class="field">
+              <label class="field-label">Designation <span class="field-req">*</span></label>
+              <input class="field-input" value="BD Manager" />
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field">
+              <label class="field-label">Mobile Number <span class="field-req">*</span></label>
+              <input class="field-input" placeholder="+91 98XXXXXXXX" value="+91 9823456710" />
+            </div>
+            <div class="field">
+              <label class="field-label">Alternate Email</label>
+              <input class="field-input" type="email" placeholder="accounts@company.in" />
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border); margin: var(--s-4) 0;"></div>
+          <div style="font-size:var(--fs-sm); font-weight:var(--fw-semibold); color:var(--fg); margin-bottom:var(--s-4);">Vendor Categories</div>
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field">
+              <label class="field-label">Primary Category <span class="field-req">*</span></label>
+              <select class="field-input sel">
+                <option selected>Instrumentation &amp; Control</option>
+                <option>Mechanical — Rotating</option>
+                <option>Piping &amp; Valves</option>
+                <option>Electrical LV</option>
+                <option>Civil / Structural</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Secondary Category</label>
+              <select class="field-input sel">
+                <option>— None —</option>
+                <option selected>Piping &amp; Valves</option>
+                <option>Mechanical — Static</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Capabilities &amp; Certifications</label>
+            <textarea class="field-input" placeholder="List key product lines, standards you are certified to (ISO, ATEX, API, etc.), and any relevant manufacturing capabilities…" style="min-height:80px;">ISO 9001:2015 · ATEX certified IECEx · API 6D valves · Manufacture of industrial valves, actuators, and control systems. Experience with offshore and refinery projects.</textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: Documents ───────────────────────────── -->
+      <div class="form-section" id="sec-docs">
+        <div class="form-section-head">
+          <div class="form-section-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5l-3-3z"/><path d="M10 2v3h3"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Required Documents</div>
+            <div class="form-section-sub">Upload all mandatory documents — accepted formats: PDF, JPG, PNG</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span class="badge" style="background:rgba(245,158,11,0.10);color:var(--warning);">3 / 6 Uploaded</span>
+          </div>
+        </div>
+        <div class="form-body">
+          <div class="doc-checklist">
+
+            <div class="doc-item uploaded">
+              <div class="doc-icon uploaded-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div class="doc-name">GST Registration Certificate</div>
+                <div class="doc-req">Mandatory · Issued by GSTN</div>
+                <div class="doc-file">GST_Cert_27AAACF1234P1Z5.pdf · 0.4 MB</div>
+              </div>
+              <div class="doc-uploaded-tag">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                Uploaded
+              </div>
+            </div>
+
+            <div class="doc-item uploaded">
+              <div class="doc-icon uploaded-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div class="doc-name">PAN Card</div>
+                <div class="doc-req">Mandatory</div>
+                <div class="doc-file">PAN_AAACF1234P.pdf · 0.2 MB</div>
+              </div>
+              <div class="doc-uploaded-tag">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                Uploaded
+              </div>
+            </div>
+
+            <div class="doc-item uploaded">
+              <div class="doc-icon uploaded-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div class="doc-name">Cancelled Cheque / Bank Letterhead</div>
+                <div class="doc-req">Mandatory · For payment processing</div>
+                <div class="doc-file">Bank_PVL_AxisNashik.pdf · 0.3 MB</div>
+              </div>
+              <div class="doc-uploaded-tag">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                Uploaded
+              </div>
+            </div>
+
+            <div class="doc-item">
+              <div class="doc-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5l-3-3z"/><path d="M10 2v3h3"/></svg>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div class="doc-name">Company Registration Certificate (MOA / AOA)</div>
+                <div class="doc-req">Mandatory · MCA issued</div>
+              </div>
+              <button class="doc-upload-btn" onclick="showToast('File upload — demo only')">Upload PDF</button>
+            </div>
+
+            <div class="doc-item">
+              <div class="doc-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5l-3-3z"/><path d="M10 2v3h3"/></svg>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div class="doc-name">Last 2 Years Audited Balance Sheet</div>
+                <div class="doc-req">Mandatory · Financial assessment</div>
+              </div>
+              <button class="doc-upload-btn" onclick="showToast('File upload — demo only')">Upload PDF</button>
+            </div>
+
+            <div class="doc-item">
+              <div class="doc-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5l-3-3z"/><path d="M10 2v3h3"/></svg>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div class="doc-name">ISO / Quality Certifications</div>
+                <div class="doc-req">If applicable</div>
+              </div>
+              <button class="doc-upload-btn" onclick="showToast('File upload — demo only')">Upload PDF</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 5: Declaration & Submit ────────────────── -->
+      <div class="form-section" id="sec-declaration">
+        <div class="form-section-head">
+          <div class="form-section-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l1.5 3.5L13 6l-2.5 2.5.5 3.5L8 10.5 5 12l.5-3.5L3 6l3.5-.5z"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Declaration &amp; Submission</div>
+            <div class="form-section-sub">Confirm accuracy of submitted information before sending for Purchase review</div>
+          </div>
+        </div>
+        <div class="form-body">
+          <div class="decl-check">
+            <input type="checkbox" id="decl1" />
+            <label class="decl-text" for="decl1">I confirm that all information provided in this registration is <strong>accurate, current, and complete</strong>. I understand that any false or misleading information may result in immediate disqualification from the vendor panel.</label>
+          </div>
+          <div class="decl-check">
+            <input type="checkbox" id="decl2" />
+            <label class="decl-text" for="decl2">I authorize <strong>Aker Solutions ASA</strong> to verify the submitted documents and financial information with relevant statutory and financial authorities.</label>
+          </div>
+          <div class="decl-check">
+            <input type="checkbox" id="decl3" />
+            <label class="decl-text" for="decl3">I acknowledge that this registration does not guarantee inclusion in the approved vendor panel. Final approval is at the sole discretion of the Purchase team.</label>
+          </div>
+
+          <div style="padding:var(--s-4); background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.20); border-radius:var(--r-md); margin-top:var(--s-4);">
+            <div style="display:flex; align-items:center; gap:var(--s-2); margin-bottom:var(--s-2);">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#F59E0B" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="11" r=".5" fill="#F59E0B"/></svg>
+              <span style="font-size:var(--fs-sm); font-weight:var(--fw-semibold); color:var(--warning);">3 documents still pending</span>
+            </div>
+            <div style="font-size:var(--fs-sm); color:var(--fg-muted);">Upload the remaining 3 mandatory documents before submission. You can save progress and return later.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.onboard-main -->
+  </div><!-- /.onboard-layout -->
+
+  <!-- ── Portal footer ─────────────────────────────────────── -->
+  <div class="portal-footer">
+    <button class="btn btn-ghost" onclick="showToast('Progress saved — you can return via the invitation link')">Save &amp; Continue Later</button>
+    <div style="display:flex; align-items:center; gap:var(--s-3);">
+      <div style="font-size:var(--fs-xs); color:var(--fg-subtle);">Complete all mandatory documents to enable submission</div>
+      <button class="btn btn-primary" onclick="showToast('Please upload remaining 3 documents before submitting')" style="opacity:0.6; cursor:not-allowed;">
+        Submit for Review
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#F59E0B" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="11" r=".5" fill="#F59E0B"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    function scrollTo(id) {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aker Procurement — New Purchase Requisition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .form-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: var(--s-5);
+    }
+    .form-section-head {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-4) var(--s-5);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .form-section-icon {
+      width: 28px; height: 28px; border-radius: var(--r-sm);
+      background: var(--accent-soft); color: var(--accent);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .form-section-title { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+    .form-section-sub   { font-size: var(--fs-sm); color: var(--fg-muted); margin-top: 1px; }
+    .form-body { padding: var(--s-5); }
+
+    .form-grid   { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); }
+    .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); }
+    .col-span-2  { grid-column: span 2; }
+    .col-span-3  { grid-column: span 3; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field-label {
+      font-size: var(--fs-xs); font-weight: var(--fw-medium);
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted);
+    }
+    .field-req { color: var(--danger); margin-left: 2px; }
+    .field-input {
+      width: 100%; padding: 8px var(--s-3);
+      background: var(--bg-base);
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      color: var(--fg); font-size: var(--fs-md); font-family: var(--font-sans);
+      transition: border-color 0.12s;
+    }
+    .field-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .field-input::placeholder { color: var(--fg-subtle); }
+    .field-input.sel {
+      cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 16 16' fill='none' stroke='%2371717a' stroke-width='1.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px;
+    }
+    .field-input.readonly-field { color: var(--fg-muted); background: var(--bg-elevated); cursor: default; }
+    textarea.field-input { resize: vertical; min-height: 80px; line-height: 1.5; }
+    .field-hint { font-size: var(--fs-xs); color: var(--fg-subtle); }
+
+    /* Priority selector */
+    .priority-pills { display: flex; gap: var(--s-2); }
+    .priority-pill {
+      padding: 6px var(--s-3); border-radius: var(--r-md);
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      font-size: var(--fs-sm); color: var(--fg-muted); cursor: pointer;
+      transition: all 0.12s;
+    }
+    .priority-pill:hover { border-color: var(--border-strong); color: var(--fg); }
+    .priority-pill.sel-normal  { border-color: var(--info);    background: rgba(6,182,212,0.08);   color: var(--info);    }
+    .priority-pill.sel-urgent  { border-color: var(--warning); background: rgba(245,158,11,0.08); color: var(--warning); }
+    .priority-pill.sel-critical{ border-color: var(--danger);  background: rgba(239,68,68,0.08);  color: var(--danger);  }
+
+    /* Line items table */
+    .li-table { width: 100%; border-collapse: collapse; }
+    .li-table th {
+      text-align: left; font-size: 10px; font-weight: var(--fw-medium);
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted);
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border); background: var(--bg-elevated);
+    }
+    .li-table td {
+      padding: var(--s-2) var(--s-3);
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: middle;
+    }
+    .li-table tbody tr:last-child td { border-bottom: none; }
+    .li-num {
+      font-family: var(--font-mono); font-size: var(--fs-xs);
+      color: var(--fg-subtle); text-align: center;
+      width: 36px;
+    }
+    .li-input {
+      width: 100%; padding: 6px 8px;
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: var(--r-sm); color: var(--fg);
+      font-size: var(--fs-sm); font-family: var(--font-sans);
+    }
+    .li-input:focus { outline: none; border-color: var(--accent); }
+    .li-input::placeholder { color: var(--fg-subtle); }
+    .li-remove {
+      width: 28px; height: 28px; border-radius: var(--r-sm);
+      background: none; border: 1px solid transparent;
+      color: var(--fg-subtle); cursor: pointer; display: grid; place-items: center;
+      transition: all 0.12s;
+    }
+    .li-remove:hover { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); color: var(--danger); }
+
+    /* Add row */
+    .add-row-btn {
+      display: flex; align-items: center; gap: var(--s-2);
+      padding: var(--s-3) var(--s-4); width: 100%;
+      background: none; border: none; border-top: 1px dashed var(--border-strong);
+      color: var(--fg-muted); font-size: var(--fs-sm); cursor: pointer;
+      transition: color 0.12s, background 0.12s;
+    }
+    .add-row-btn:hover { color: var(--accent); background: var(--accent-soft); }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 1px dashed var(--border-strong); border-radius: var(--r-md);
+      padding: var(--s-5); display: flex; flex-direction: column;
+      align-items: center; gap: var(--s-3); cursor: pointer; text-align: center;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .upload-zone:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .upload-zone-icon {
+      width: 40px; height: 40px; border-radius: var(--r-md);
+      background: var(--bg-elevated); color: var(--fg-muted);
+      display: grid; place-items: center;
+    }
+
+    /* Attached file pills */
+    .file-pills { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+    .file-pill {
+      display: inline-flex; align-items: center; gap: var(--s-2);
+      padding: 5px var(--s-3); background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      font-size: var(--fs-sm); color: var(--fg-muted);
+    }
+    .file-pill-name { color: var(--fg); font-weight: var(--fw-medium); }
+    .file-pill-size { font-size: var(--fs-xs); color: var(--fg-subtle); }
+    .file-pill-x { color: var(--fg-subtle); cursor: pointer; margin-left: 2px; }
+    .file-pill-x:hover { color: var(--danger); }
+
+    /* Draft auto-save chip */
+    .autosave-chip {
+      display: flex; align-items: center; gap: 6px;
+      font-size: var(--fs-xs); color: var(--fg-subtle);
+    }
+
+    /* Sticky footer */
+    .create-footer {
+      position: fixed; bottom: 0; left: var(--nav-w); right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-4) var(--s-8);
+      background: var(--bg-elevated); border-top: 1px solid var(--border);
+      z-index: 20;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: var(--s-3) var(--s-4);
+      font-size: var(--fs-sm); color: var(--fg); display: flex; align-items: center; gap: var(--s-2);
+      box-shadow: var(--shadow-md); z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .toast.show { opacity: 1; }
+  
+    /* Back navigation */
+    .back-nav {
+      display: flex; align-items: center; gap: var(--s-2);
+      margin-bottom: var(--s-5);
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); font-weight: 500;
+      color: var(--fg-muted); text-decoration: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    .back-btn:hover { color: var(--fg); background: var(--bg-hover); }
+    .back-btn svg { flex-shrink: 0; }
+    .back-crumb-sep { color: var(--border-strong); font-size: var(--fs-sm); }
+    .back-crumb-current { font-size: var(--fs-sm); color: var(--fg); font-weight: 500; }
+  </style>
+</head>
+<body class="app">
+
+  <!-- ── Sidebar nav ─────────────────────────────────────────── -->
+  <aside class="nav">
+    <div class="nav-brand">
+      <button class="hamburger-btn" onclick="toggleNav()" aria-label="Toggle menu">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+      <div class="nav-brand-text">
+        <div class="nav-brand-name">Procure</div>
+        <div class="nav-brand-sub">Procurement</div>
+      </div>
+    </div>
+        <div class="nav-items">
+      <a class="nav-item" href="dashboard.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header" href="clients.html" onclick="toggleGroup(this)">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V7l6-4 6 4v7zM6 14V9h4v5"/></svg>
+          <span>Master Data</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="clients.html">Clients</a>
+          <a class="nav-item nav-sub-item" href="projects.html">Projects</a>
+          <a class="nav-item nav-sub-item" href="vendor-categories.html">Categories</a>
+          <a class="nav-item nav-sub-item" href="terms-conditions.html">Terms &amp; Conditions</a>
+          <a class="nav-item nav-sub-item" href="payment-terms.html">Payment Terms</a>
+          <a class="nav-item nav-sub-item" href="inco-terms.html">Inco Terms</a>
+          <a class="nav-item nav-sub-item" href="uom.html">Unit of Measure</a>
+          <a class="nav-item nav-sub-item" href="additional-costs.html">Additional Costs</a>
+          <a class="nav-item nav-sub-item" href="vendors.html">Vendors</a>
+        </div>
+      </div>
+      <a class="nav-item active" href="pr-list-v2.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M5 8h6M5 11h4"/></svg>
+        <span>Purchase Requisitions</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header expanded" href="rfq-list-v2.html">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2z"/><path d="M2 4l6 5 6-5"/></svg>
+          <span>RFQs</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="rfq-list-v2.html">All RFQs</a>
+          <a class="nav-item nav-sub-item" href="rfq-create-v2.html">New RFQ</a>
+        </div>
+      </div>
+      <a class="nav-item" href="purchase-orders.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l1.5 8.5a1 1 0 0 0 1 .85h7a1 1 0 0 0 1-.85L14 4"/><path d="M2 4h12M6 7v3M10 7v3"/></svg>
+        <span>Purchase Orders</span>
+      </a>
+    </div>
+    <div class="nav-footer">
+      <div class="user-card">
+        <div class="avatar">RS</div>
+        <div>
+          <div class="user-name">Rahul Singh</div>
+          <div class="user-email">Engineering Lead</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="nav-backdrop" id="nav-backdrop" onclick="closeNav()"></div>
+
+  <!-- ── Main ───────────────────────────────────────────────── -->
+  <main class="main" style="padding-bottom: 90px;">
+
+    <div class="back-nav">
+      <a class="back-btn" href="pr-list-v2.html"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4L6 8l4 4"/></svg> Purchase Requisitions</a>
+      <span class="back-crumb-sep">/</span>
+      <span class="back-crumb-current">New Requisition</span>
+    </div>
+
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:var(--s-6);">
+      <div>
+        <h1 class="page-title" style="margin-bottom:4px;">New Purchase Requisition</h1>
+        <div style="font-size:var(--fs-sm); color:var(--fg-muted);">Raised by Engineering · Submitted for Engineering Lead approval</div>
+      </div>
+      <div class="autosave-chip">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 1 0 12 0A6 6 0 0 0 2 8Z"/><path d="M8 5v3.5l2 1"/></svg>
+        Draft auto-saved 12:34
+      </div>
+    </div>
+
+    <!-- ── SECTION 1: PR Header ─────────────────────────────── -->
+    <div class="form-section">
+      <div class="form-section-head">
+        <div class="form-section-icon">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M10 2v4h4"/></svg>
+        </div>
+        <div>
+          <div class="form-section-title">Requisition Header</div>
+          <div class="form-section-sub">Basic identification and classification</div>
+        </div>
+        <div style="margin-left:auto;">
+          <span class="badge" style="background:rgba(6,182,212,0.10);color:var(--info);">Draft</span>
+        </div>
+      </div>
+      <div class="form-body">
+        <div class="form-grid" style="margin-bottom:var(--s-4);">
+          <div class="field">
+            <label class="field-label">PR Number</label>
+            <input class="field-input readonly-field" value="PR-2026-019" readonly />
+            <div class="field-hint">Auto-assigned on submission</div>
+          </div>
+          <div class="field">
+            <label class="field-label">Client <span class="field-req">*</span></label>
+            <select class="field-input sel">
+              <option>Aker Solutions ASA</option>
+              <option>L&amp;T Hydrocarbon</option>
+              <option>HPCL Rajasthan Refinery</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Project <span class="field-req">*</span></label>
+            <select class="field-input sel">
+              <option>FPSO Njord Refit — Phase 3</option>
+              <option>Gas Compression Unit</option>
+              <option>Sulphur Recovery Block</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid" style="margin-bottom:var(--s-4);">
+          <div class="field">
+            <label class="field-label">Discipline / Category <span class="field-req">*</span></label>
+            <select class="field-input sel">
+              <option>Mechanical — Rotating</option>
+              <option>Mechanical — Static</option>
+              <option>Electrical LV</option>
+              <option>Instrumentation &amp; Control</option>
+              <option>Piping &amp; Valves</option>
+              <option>Civil / Structural</option>
+              <option>Fire &amp; Gas Safety</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Required By <span class="field-req">*</span></label>
+            <input type="date" class="field-input" value="2026-08-15" />
+          </div>
+          <div class="field">
+            <label class="field-label">Budget Code</label>
+            <input class="field-input" placeholder="e.g. FD-2026-051" />
+          </div>
+        </div>
+        <div style="margin-bottom:var(--s-4);">
+          <div class="field-label" style="margin-bottom:var(--s-2);">Priority <span class="field-req">*</span></div>
+          <div class="priority-pills">
+            <button class="priority-pill sel-normal" onclick="setPriority(this,'sel-normal')">Normal</button>
+            <button class="priority-pill" onclick="setPriority(this,'sel-urgent')">Urgent</button>
+            <button class="priority-pill" onclick="setPriority(this,'sel-critical')">Critical / SOS</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Scope Summary <span class="field-req">*</span></label>
+          <textarea class="field-input" placeholder="Describe the overall procurement scope, purpose, and any relevant project context…" style="min-height:96px;">Procurement of centrifugal process pumps (API 610 compliant) for produced water injection service in the FPSO utility deck. Required to meet the project hydraulic design basis Rev D, with ATEX Zone 1 motor classification. Eight pump sets total across two skids.</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: Line Items ────────────────────────────── -->
+    <div class="form-section">
+      <div class="form-section-head">
+        <div class="form-section-icon">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h5"/></svg>
+        </div>
+        <div>
+          <div class="form-section-title">Line Items</div>
+          <div class="form-section-sub">Individual items to be procured — each item can have its own spec and drawings</div>
+        </div>
+        <div style="margin-left:auto; font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--fg-subtle);">
+          <span id="row-count">5</span> items
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="li-table" id="li-table">
+          <thead>
+            <tr>
+              <th style="width:36px;">#</th>
+              <th style="min-width:220px;">Description <span style="color:var(--danger);">*</span></th>
+              <th style="width:80px;">Qty <span style="color:var(--danger);">*</span></th>
+              <th style="width:90px;">UoM <span style="color:var(--danger);">*</span></th>
+              <th style="min-width:160px;">Make / Spec</th>
+              <th style="min-width:140px;">Technical Notes</th>
+              <th style="width:90px;">Drawings</th>
+              <th style="width:36px;"></th>
+            </tr>
+          </thead>
+          <tbody id="li-tbody">
+            <tr>
+              <td class="li-num">01</td>
+              <td><input class="li-input" value="Centrifugal Process Pump — Produced Water Injection" /></td>
+              <td><input class="li-input" type="number" value="8" style="width:70px;" /></td>
+              <td>
+                <select class="li-input" style="width:80px;">
+                  <option>No.</option><option>Set</option><option>Kg</option><option>M</option><option>Ltr</option>
+                </select>
+              </td>
+              <td><input class="li-input" placeholder="e.g. Flowserve / KSB" value="API 610, 11th Ed." /></td>
+              <td><input class="li-input" placeholder="ATEX, material, etc." value="Zone 1, ATEX, SS316 casing" /></td>
+              <td>
+                <span class="file-pill" style="font-size:10px; padding:3px 6px;">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>
+                  GD-041.pdf
+                </span>
+              </td>
+              <td><button class="li-remove" onclick="removeRow(this)" title="Remove">✕</button></td>
+            </tr>
+            <tr>
+              <td class="li-num">02</td>
+              <td><input class="li-input" value="Motor — ATEX Zone 1, IE3, 75 kW" /></td>
+              <td><input class="li-input" type="number" value="8" style="width:70px;" /></td>
+              <td>
+                <select class="li-input" style="width:80px;">
+                  <option>No.</option><option>Set</option><option>Kg</option>
+                </select>
+              </td>
+              <td><input class="li-input" value="Siemens / WEG" /></td>
+              <td><input class="li-input" value="IE3, IP55, IEC B3/B35" /></td>
+              <td>
+                <button class="btn btn-ghost btn-sm" style="font-size:10px; padding:3px 6px; gap:4px;">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+                  Attach
+                </button>
+              </td>
+              <td><button class="li-remove" onclick="removeRow(this)" title="Remove">✕</button></td>
+            </tr>
+            <tr>
+              <td class="li-num">03</td>
+              <td><input class="li-input" value="Mechanical Seal — Double, Pressurised" /></td>
+              <td><input class="li-input" type="number" value="8" style="width:70px;" /></td>
+              <td>
+                <select class="li-input" style="width:80px;">
+                  <option selected>Set</option><option>No.</option><option>Kg</option>
+                </select>
+              </td>
+              <td><input class="li-input" value="John Crane / Flowserve" /></td>
+              <td><input class="li-input" value="API 682, Plan 53B" /></td>
+              <td>
+                <button class="btn btn-ghost btn-sm" style="font-size:10px; padding:3px 6px; gap:4px;">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+                  Attach
+                </button>
+              </td>
+              <td><button class="li-remove" onclick="removeRow(this)" title="Remove">✕</button></td>
+            </tr>
+            <tr>
+              <td class="li-num">04</td>
+              <td><input class="li-input" value="Baseplate — Common, Epoxy-Grouted, Drip Rim" /></td>
+              <td><input class="li-input" type="number" value="2" style="width:70px;" /></td>
+              <td>
+                <select class="li-input" style="width:80px;">
+                  <option>No.</option><option selected>Set</option>
+                </select>
+              </td>
+              <td><input class="li-input" placeholder="OEM standard" /></td>
+              <td><input class="li-input" value="Vendor design, API 686" /></td>
+              <td>
+                <button class="btn btn-ghost btn-sm" style="font-size:10px; padding:3px 6px; gap:4px;">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+                  Attach
+                </button>
+              </td>
+              <td><button class="li-remove" onclick="removeRow(this)" title="Remove">✕</button></td>
+            </tr>
+            <tr>
+              <td class="li-num">05</td>
+              <td><input class="li-input" value="Instrumentation Package — Local PI, TI, VS" /></td>
+              <td><input class="li-input" type="number" value="2" style="width:70px;" /></td>
+              <td>
+                <select class="li-input" style="width:80px;">
+                  <option selected>Set</option><option>No.</option>
+                </select>
+              </td>
+              <td><input class="li-input" placeholder="Vendor package" /></td>
+              <td><input class="li-input" value="ATEX Zone 1, 4–20mA output" /></td>
+              <td>
+                <button class="btn btn-ghost btn-sm" style="font-size:10px; padding:3px 6px; gap:4px;">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+                  Attach
+                </button>
+              </td>
+              <td><button class="li-remove" onclick="removeRow(this)" title="Remove">✕</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="add-row-btn" onclick="addRow()">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+          Add line item
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: Supporting Documents ─────────────────── -->
+    <div class="form-section">
+      <div class="form-section-head">
+        <div class="form-section-icon">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5l-3-3z"/><path d="M10 2v3h3"/></svg>
+        </div>
+        <div>
+          <div class="form-section-title">Supporting Documents</div>
+          <div class="form-section-sub">Attach P&amp;IDs, data sheets, design basis, or any reference documents</div>
+        </div>
+      </div>
+      <div class="form-body">
+        <div class="upload-zone" onclick="showToast('File upload — demo only')">
+          <div class="upload-zone-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div style="font-size:var(--fs-sm); color:var(--fg-muted);">Drop files here or <span style="color:var(--accent);">browse</span></div>
+          <div style="font-size:var(--fs-xs); color:var(--fg-subtle);">PDF, DWG, DXF, XLS — max 50 MB per file</div>
+        </div>
+        <div class="file-pills">
+          <div class="file-pill">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>
+            <span class="file-pill-name">Design_Basis_Rev_D.pdf</span>
+            <span class="file-pill-size">2.3 MB</span>
+            <span class="file-pill-x">✕</span>
+          </div>
+          <div class="file-pill">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>
+            <span class="file-pill-name">PID_FPSO_WI_Deck_Rev2.pdf</span>
+            <span class="file-pill-size">4.1 MB</span>
+            <span class="file-pill-x">✕</span>
+          </div>
+          <div class="file-pill">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>
+            <span class="file-pill-name">DataSheet_PumpSkid_GD-041.pdf</span>
+            <span class="file-pill-size">1.8 MB</span>
+            <span class="file-pill-x">✕</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 4: Internal Notes ────────────────────────── -->
+    <div class="form-section">
+      <div class="form-section-head">
+        <div class="form-section-icon" style="background:rgba(113,113,122,0.12); color:var(--fg-muted);">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2zM6 8h4"/></svg>
+        </div>
+        <div>
+          <div class="form-section-title">Internal Notes</div>
+          <div class="form-section-sub">Optional — visible to Engineering Lead only, not forwarded to Purchase</div>
+        </div>
+      </div>
+      <div class="form-body">
+        <textarea class="field-input" placeholder="Add context for the Engineering Lead reviewer — assumptions, vendor preferences, schedule constraints…" style="min-height:80px;"></textarea>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Sticky footer ─────────────────────────────────────── -->
+  <div class="create-footer">
+    <div style="display:flex; align-items:center; gap:var(--s-3);">
+      <a href="pr-list-v2.html" class="btn btn-ghost">Discard</a>
+      <button class="btn btn-secondary" onclick="showToast('PR saved as Draft — PR-2026-019')">Save as Draft</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:var(--s-3);">
+      <div style="font-size:var(--fs-xs); color:var(--fg-subtle);">Will be sent to Engineering Lead for sign-off</div>
+      <button class="btn btn-primary" onclick="submitPR()">
+        Submit for Approval
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    function toggleGroup(el) {
+      el.classList.toggle('expanded');
+    }
+    function toggleNav() { document.querySelector('.nav').classList.toggle('open'); document.getElementById('nav-backdrop').classList.toggle('open'); }
+    function closeNav()  { document.querySelector('.nav').classList.remove('open'); document.getElementById('nav-backdrop').classList.remove('open'); }
+
+    function setPriority(el, cls) {
+      document.querySelectorAll('.priority-pill').forEach(p => p.className = 'priority-pill');
+      el.classList.add(cls);
+    }
+
+    let rowCount = 5;
+    function addRow() {
+      rowCount++;
+      const n = String(rowCount).padStart(2, '0');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="li-num">${n}</td>
+        <td><input class="li-input" placeholder="Item description…" /></td>
+        <td><input class="li-input" type="number" placeholder="1" style="width:70px;" /></td>
+        <td><select class="li-input" style="width:80px;"><option>No.</option><option>Set</option><option>Kg</option><option>M</option><option>Ltr</option></select></td>
+        <td><input class="li-input" placeholder="Make / spec" /></td>
+        <td><input class="li-input" placeholder="Notes" /></td>
+        <td><button class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 6px;gap:4px;" onclick="showToast('File upload — demo only')"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>Attach</button></td>
+        <td><button class="li-remove" onclick="removeRow(this)" title="Remove">✕</button></td>
+      `;
+      document.getElementById('li-tbody').appendChild(tr);
+      document.getElementById('row-count').textContent = rowCount;
+    }
+
+    function removeRow(btn) {
+      btn.closest('tr').remove();
+      rowCount = Math.max(0, rowCount - 1);
+      document.getElementById('row-count').textContent = rowCount;
+      // Re-number
+      document.querySelectorAll('#li-tbody tr').forEach((tr, i) => {
+        tr.querySelector('.li-num').textContent = String(i + 1).padStart(2, '0');
+      });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function submitPR() {
+      showToast('PR-2026-019 submitted — awaiting Engineering Lead sign-off');
+      setTimeout(() => { window.location.href = 'pr-list-v2.html'; }, 1800);
+    }
+  </script>
+</body>
+</html>

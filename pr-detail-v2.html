@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aker — PR Detail v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .v2-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.3); border-radius: 999px;
+      font-size: 10px; font-weight: 600; color: #a855f7;
+      letter-spacing: 0.06em; margin-bottom: var(--s-4);
+    }
+    /* Placeholder box */
+    .ph {
+      background: var(--bg-elevated);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); font-size: var(--fs-xs); font-style: italic;
+    }
+
+    /* Section card */
+    .sec {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: var(--s-4);
+    }
+    .sec-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-3) var(--s-5);
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      font-size: var(--fs-sm); font-weight: 600;
+    }
+    .sec-body { padding: var(--s-4) var(--s-5); }
+
+    /* Meta grid */
+    .meta-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--s-4); }
+    .meta-cell-label { font-size: var(--fs-xs); color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .meta-cell-value { font-size: var(--fs-sm); color: var(--fg); font-weight: 500; }
+
+    /* Line items table */
+    .li-table { width: 100%; border-collapse: collapse; }
+    .li-table th {
+      text-align: left; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted);
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border); background: var(--bg-elevated);
+      white-space: nowrap;
+    }
+    .li-table td {
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--fs-sm); vertical-align: middle;
+    }
+    .li-table tbody tr:last-child td { border-bottom: none; }
+    .li-table tbody tr:hover td { background: var(--bg-subtle); }
+
+    /* Checkbox select */
+    .row-check { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+
+    /* File pills */
+    .file-row { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+    .fpill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      font-size: var(--fs-xs); color: var(--fg-muted);
+    }
+
+    /* Status badge sizes */
+    .badge-xs { font-size: 10px; padding: 2px 7px; }
+
+    /* Selection bar (appears when rows checked) */
+    .sel-bar {
+      display: none;
+      position: fixed; bottom: 0; left: var(--nav-w); right: 0;
+      padding: var(--s-3) var(--s-8);
+      background: rgba(6,182,212,0.08);
+      border-top: 1px solid rgba(6,182,212,0.2);
+      align-items: center; gap: var(--s-3);
+      font-size: var(--fs-sm); color: var(--fg-muted);
+      z-index: 19;
+    }
+    .sel-bar.show { display: flex; }
+
+    .mono { font-family: var(--font-mono); }
+  
+    /* Back navigation */
+    .back-nav {
+      display: flex; align-items: center; gap: var(--s-2);
+      margin-bottom: var(--s-5);
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); font-weight: 500;
+      color: var(--fg-muted); text-decoration: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    .back-btn:hover { color: var(--fg); background: var(--bg-hover); }
+    .back-btn svg { flex-shrink: 0; }
+    .back-crumb-sep { color: var(--border-strong); font-size: var(--fs-sm); }
+    .back-crumb-current { font-size: var(--fs-sm); color: var(--fg); font-weight: 500; }
+  </style>
+</head>
+<body class="app">
+
+  <!-- Nav -->
+  <aside class="nav">
+    <div class="nav-brand">
+      <button class="hamburger-btn" onclick="toggleNav()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+      <div class="nav-brand-text">
+        <div class="nav-brand-name">Procure</div>
+        <div class="nav-brand-sub">Procurement</div>
+      </div>
+    </div>
+        <div class="nav-items">
+      <a class="nav-item" href="dashboard.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header" href="clients.html" onclick="toggleGroup(this)">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V7l6-4 6 4v7zM6 14V9h4v5"/></svg>
+          <span>Master Data</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="clients.html">Clients</a>
+          <a class="nav-item nav-sub-item" href="projects.html">Projects</a>
+          <a class="nav-item nav-sub-item" href="vendor-categories.html">Categories</a>
+          <a class="nav-item nav-sub-item" href="terms-conditions.html">Terms &amp; Conditions</a>
+          <a class="nav-item nav-sub-item" href="payment-terms.html">Payment Terms</a>
+          <a class="nav-item nav-sub-item" href="inco-terms.html">Inco Terms</a>
+          <a class="nav-item nav-sub-item" href="uom.html">Unit of Measure</a>
+          <a class="nav-item nav-sub-item" href="additional-costs.html">Additional Costs</a>
+          <a class="nav-item nav-sub-item" href="vendors.html">Vendors</a>
+        </div>
+      </div>
+      <a class="nav-item active" href="pr-list-v2.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M5 8h6M5 11h4"/></svg>
+        <span>Purchase Requisitions</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header expanded" href="rfq-list-v2.html">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2z"/><path d="M2 4l6 5 6-5"/></svg>
+          <span>RFQs</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="rfq-list-v2.html">All RFQs</a>
+          <a class="nav-item nav-sub-item" href="rfq-create-v2.html">New RFQ</a>
+        </div>
+      </div>
+      <a class="nav-item" href="purchase-orders.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l1.5 8.5a1 1 0 0 0 1 .85h7a1 1 0 0 0 1-.85L14 4"/><path d="M2 4h12M6 7v3M10 7v3"/></svg>
+        <span>Purchase Orders</span>
+      </a>
+    </div>
+    <div class="nav-footer">
+      <div class="user-card">
+        <div class="avatar">RS</div>
+        <div>
+          <div class="user-name">Rahul Singh</div>
+          <div class="user-email">Engineering Lead</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="nav-backdrop" id="nav-backdrop" onclick="closeNav()"></div>
+
+  <main class="main" style="padding-bottom:130px;">
+
+    
+
+    <div class="back-nav">
+      <a class="back-btn" href="pr-list-v2.html"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4L6 8l4 4"/></svg> Purchase Requisitions</a>
+      <span class="back-crumb-sep">/</span>
+      <span class="back-crumb-current">PR-2026-018</span>
+    </div>
+
+    <!-- PR Header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--s-5);">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-2);">
+          <h1 style="font-size:var(--fs-2xl);font-weight:700;letter-spacing:-0.01em;">PR-2026-018</h1>
+          <span class="badge" style="background:rgba(245,158,11,0.10);color:var(--warning);">Partial</span>
+        </div>
+        <div style="font-size:var(--fs-sm);color:var(--fg-muted);">Mechanical Piping — Utility Deck · FPSO Njord Refit Phase 3</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:340px;justify-content:flex-end;">
+        <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(16,185,129,0.10);color:var(--success);">2 PO Generated</span>
+        <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(168,85,247,0.10);color:#a855f7;">2 Comm. Eval</span>
+        <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(6,182,212,0.10);color:var(--info);">1 Tech Eval</span>
+        <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(245,158,11,0.10);color:var(--warning);">1 In RFQ</span>
+        <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg-elevated);color:var(--fg-muted);">2 Approved</span>
+      </div>
+    </div>
+
+    <!-- ── SECTION 1: Header info ─────────────────────────── -->
+    <div class="sec">
+      <div class="sec-head">
+        Requisition Details
+        <span style="font-size:var(--fs-xs);color:var(--fg-subtle);font-weight:400;">Raised by R. Singh · 28 May 2026</span>
+      </div>
+      <div class="sec-body">
+        <div class="meta-grid" style="margin-bottom:var(--s-4);">
+          <div>
+            <div class="meta-cell-label">Client</div>
+            <div class="meta-cell-value">Aker Solutions ASA</div>
+          </div>
+          <div>
+            <div class="meta-cell-label">Project</div>
+            <div class="meta-cell-value">FPSO Njord Refit — Ph.3</div>
+          </div>
+          <div>
+            <div class="meta-cell-label">Category</div>
+            <div class="meta-cell-value">Piping &amp; Valves</div>
+          </div>
+          <div>
+            <div class="meta-cell-label">Required By</div>
+            <div class="meta-cell-value">30 Jul 2026</div>
+          </div>
+          <div>
+            <div class="meta-cell-label">Priority</div>
+            <div class="meta-cell-value" style="color:var(--warning);">Urgent</div>
+          </div>
+          <div>
+            <div class="meta-cell-label">Budget Code</div>
+            <div class="meta-cell-value mono">FD-2026-048</div>
+          </div>
+          <div style="grid-column:span 2;">
+            <div class="meta-cell-label">Scope Summary</div>
+            <div class="meta-cell-value" style="font-weight:400;color:var(--fg-muted);line-height:1.5;">Procurement of piping system components for utility deck — includes gate valves, check valves, pipe spools, fittings, and supports per P&amp;ID Rev 2.</div>
+          </div>
+        </div>
+        <div style="font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:0.06em;color:var(--fg-subtle);margin-bottom:var(--s-2);">Header Documents</div>
+        <div class="file-row">
+          <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>PID_Utility_Deck_Rev2.pdf</div>
+          <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>Piping_Spec_SS316_CS.pdf</div>
+          <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>MTO_Rev3.xlsx</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: Line Items ──────────────────────────── -->
+    <div class="sec">
+      <div class="sec-head">
+        Line Items
+        <div style="display:flex;align-items:center;gap:var(--s-3);">
+          <span style="font-size:var(--fs-xs);color:var(--fg-subtle);font-weight:400;" id="sel-count">Select items to generate RFQ</span>
+          <button class="btn btn-primary btn-sm" id="gen-rfq-btn" onclick="generateRFQ()">
+            Generate RFQ
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+          </button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="li-table">
+          <thead>
+            <tr>
+              <th style="width:32px;"><input type="checkbox" class="row-check" id="chk-all" onchange="toggleAll(this)" /></th>
+              <th style="width:36px;">#</th>
+              <th style="min-width:220px;">Description</th>
+              <th>Category</th>
+              <th style="width:60px;">Qty</th>
+              <th style="width:80px;">Rem. Qty</th>
+              <th style="width:50px;">Unit</th>
+              <th style="width:100px;">Line Status</th>
+              <th style="width:120px;">PO / RFQ Ref</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- 01 — PO Generated (done, not selectable) -->
+            <tr style="opacity:0.6;">
+              <td rowspan="2" style="vertical-align:top;padding-top:14px;"><input type="checkbox" class="row-check item-chk" disabled /></td>
+              <td rowspan="2" class="mono" style="color:var(--fg-subtle);font-size:11px;vertical-align:top;padding-top:14px;">01</td>
+              <td style="font-weight:500;border-bottom:none;padding-bottom:4px;">Gate Valve — 6" Class 300, SS316</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Valves</td>
+              <td class="mono" style="border-bottom:none;">24</td>
+              <td class="mono" style="color:var(--success);border-bottom:none;">0</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">No.</td>
+              <td style="border-bottom:none;"><span class="badge badge-xs" style="background:rgba(16,185,129,0.12);color:var(--success);">PO Generated</span></td>
+              <td style="border-bottom:none;font-size:11px;font-family:var(--font-mono);color:var(--success);">PO-2026-029</td>
+            </tr>
+            <tr style="opacity:0.6;">
+              <td colspan="7" style="padding-top:4px;">
+                <div class="file-row">
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>GV_6in_Class300_Spec.pdf</div>
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>GA_Drawing_GV.pdf</div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 02 — PO Generated -->
+            <tr style="opacity:0.6;">
+              <td rowspan="2" style="vertical-align:top;padding-top:14px;"><input type="checkbox" class="row-check item-chk" disabled /></td>
+              <td rowspan="2" class="mono" style="color:var(--fg-subtle);font-size:11px;vertical-align:top;padding-top:14px;">02</td>
+              <td style="font-weight:500;border-bottom:none;padding-bottom:4px;">Check Valve — 4" Swing Type, CS</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Valves</td>
+              <td class="mono" style="border-bottom:none;">12</td>
+              <td class="mono" style="color:var(--success);border-bottom:none;">0</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">No.</td>
+              <td style="border-bottom:none;"><span class="badge badge-xs" style="background:rgba(16,185,129,0.12);color:var(--success);">PO Generated</span></td>
+              <td style="border-bottom:none;font-size:11px;font-family:var(--font-mono);color:var(--success);">PO-2026-029</td>
+            </tr>
+            <tr style="opacity:0.6;">
+              <td colspan="7" style="padding-top:4px;">
+                <div class="file-row">
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>CV_4in_Spec.pdf</div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 03 — Comm Evaluation -->
+            <tr style="opacity:0.65;">
+              <td rowspan="2" style="vertical-align:top;padding-top:14px;"><input type="checkbox" class="row-check item-chk" disabled /></td>
+              <td rowspan="2" class="mono" style="color:var(--fg-subtle);font-size:11px;vertical-align:top;padding-top:14px;">03</td>
+              <td style="font-weight:500;border-bottom:none;padding-bottom:4px;">Pipe Spool — 8" SCH 40, SS316L</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Piping</td>
+              <td class="mono" style="border-bottom:none;">80 m</td>
+              <td class="mono" style="color:var(--success);border-bottom:none;">0</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">M</td>
+              <td style="border-bottom:none;"><span class="badge badge-xs" style="background:rgba(168,85,247,0.12);color:#a855f7;">Comm. Eval</span></td>
+              <td style="border-bottom:none;font-size:11px;font-family:var(--font-mono);color:var(--fg-muted);">RFQ-2026-041</td>
+            </tr>
+            <tr style="opacity:0.65;">
+              <td colspan="7" style="padding-top:4px;">
+                <div class="file-row">
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>Isometric_Spool_8in.pdf</div>
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>Mat_Cert_SS316L.pdf</div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 04 — Comm Evaluation -->
+            <tr style="opacity:0.65;">
+              <td rowspan="2" style="vertical-align:top;padding-top:14px;"><input type="checkbox" class="row-check item-chk" disabled /></td>
+              <td rowspan="2" class="mono" style="color:var(--fg-subtle);font-size:11px;vertical-align:top;padding-top:14px;">04</td>
+              <td style="font-weight:500;border-bottom:none;padding-bottom:4px;">Reducing Tee — 8"×6" BW, SS316L</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Piping</td>
+              <td class="mono" style="border-bottom:none;">6</td>
+              <td class="mono" style="color:var(--success);border-bottom:none;">0</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">No.</td>
+              <td style="border-bottom:none;"><span class="badge badge-xs" style="background:rgba(168,85,247,0.12);color:#a855f7;">Comm. Eval</span></td>
+              <td style="border-bottom:none;font-size:11px;font-family:var(--font-mono);color:var(--fg-muted);">RFQ-2026-041</td>
+            </tr>
+            <tr style="opacity:0.65;">
+              <td colspan="7" style="padding-top:4px;">
+                <div class="file-row">
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>Fitting_Spec_SS316L.pdf</div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 05 — Tech Evaluation -->
+            <tr style="opacity:0.7;">
+              <td rowspan="2" style="vertical-align:top;padding-top:14px;"><input type="checkbox" class="row-check item-chk" disabled /></td>
+              <td rowspan="2" class="mono" style="color:var(--fg-subtle);font-size:11px;vertical-align:top;padding-top:14px;">05</td>
+              <td style="font-weight:500;border-bottom:none;padding-bottom:4px;">Gate Valve — 4" Class 150, CS</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Valves</td>
+              <td class="mono" style="border-bottom:none;">16</td>
+              <td class="mono" style="color:var(--success);border-bottom:none;">0</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">No.</td>
+              <td style="border-bottom:none;"><span class="badge badge-xs" style="background:rgba(6,182,212,0.10);color:var(--info);">Tech Eval</span></td>
+              <td style="border-bottom:none;font-size:11px;font-family:var(--font-mono);color:var(--fg-muted);">RFQ-2026-042</td>
+            </tr>
+            <tr style="opacity:0.7;">
+              <td colspan="7" style="padding-top:4px;">
+                <div class="file-row">
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>GV_4in_Class150_Spec.pdf</div>
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>Tag_List.xlsx</div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 06 — In RFQ -->
+            <tr style="opacity:0.75;">
+              <td rowspan="2" style="vertical-align:top;padding-top:14px;"><input type="checkbox" class="row-check item-chk" disabled /></td>
+              <td rowspan="2" class="mono" style="color:var(--fg-subtle);font-size:11px;vertical-align:top;padding-top:14px;">06</td>
+              <td style="font-weight:500;border-bottom:none;padding-bottom:4px;">Ball Valve — 3" Full Bore, SS316</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Valves</td>
+              <td class="mono" style="border-bottom:none;">8</td>
+              <td class="mono" style="color:var(--success);border-bottom:none;">0</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">No.</td>
+              <td style="border-bottom:none;"><span class="badge badge-xs" style="background:rgba(245,158,11,0.10);color:var(--warning);">In RFQ</span></td>
+              <td style="border-bottom:none;font-size:11px;font-family:var(--font-mono);color:var(--fg-muted);">RFQ-2026-043</td>
+            </tr>
+            <tr style="opacity:0.75;">
+              <td colspan="7" style="padding-top:4px;">
+                <div class="file-row">
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>BV_3in_Spec.pdf</div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 07 — Approved (selectable) -->
+            <tr>
+              <td rowspan="2" style="vertical-align:top;padding-top:14px;"><input type="checkbox" class="row-check item-chk" onchange="updateSel()" /></td>
+              <td rowspan="2" class="mono" style="color:var(--fg-subtle);font-size:11px;vertical-align:top;padding-top:14px;">07</td>
+              <td style="font-weight:500;border-bottom:none;padding-bottom:4px;">Pipe Fittings Pack — 90° Elbows, SS316L</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Piping</td>
+              <td class="mono" style="border-bottom:none;">48</td>
+              <td class="mono" style="color:var(--warning);border-bottom:none;">48</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">No.</td>
+              <td style="border-bottom:none;"><span class="badge badge-xs" style="background:var(--bg-elevated);color:var(--fg-muted);border:1px solid var(--border);">Approved</span></td>
+              <td style="border-bottom:none;color:var(--fg-subtle);font-size:var(--fs-xs);">—</td>
+            </tr>
+            <tr>
+              <td colspan="7" style="padding-top:4px;">
+                <div class="file-row">
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>Fittings_Spec_SS316L.pdf</div>
+                  <div class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>Quantity_Schedule.xlsx</div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- 08 — Approved (selectable) -->
+            <tr>
+              <td rowspan="2" style="vertical-align:top;padding-top:14px;"><input type="checkbox" class="row-check item-chk" onchange="updateSel()" /></td>
+              <td rowspan="2" class="mono" style="color:var(--fg-subtle);font-size:11px;vertical-align:top;padding-top:14px;">08</td>
+              <td style="font-weight:500;border-bottom:none;padding-bottom:4px;">Gasket &amp; Stud Set — Class 300</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Fittings</td>
+              <td class="mono" style="border-bottom:none;">1</td>
+              <td class="mono" style="color:var(--warning);border-bottom:none;">1</td>
+              <td style="color:var(--fg-muted);border-bottom:none;">Lot</td>
+              <td style="border-bottom:none;"><span class="badge badge-xs" style="background:var(--bg-elevated);color:var(--fg-muted);border:1px solid var(--border);">Approved</span></td>
+              <td style="border-bottom:none;color:var(--fg-subtle);font-size:var(--fs-xs);">—</td>
+            </tr>
+            <tr>
+              <td colspan="7" style="padding-top:4px;">
+                <span style="font-size:var(--fs-xs);color:var(--fg-subtle);font-style:italic;">No drawings — standard item</span>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:var(--s-3) var(--s-5);border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--fg-subtle);">
+        Items 01–06 are already in sourcing (PO Generated, Comm Eval, Tech Eval, or In RFQ) · Select items 07–08 (Approved) to generate a new RFQ
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: Approval comments (placeholder) ─────── -->
+    <div class="sec">
+      <div class="sec-head">Approval Thread</div>
+      <div class="sec-body">
+        <div class="ph" style="height:120px;">[ Approval comment thread — messages between Requester and Engineering Lead · TBD ]</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Selection bar -->
+  <div class="sel-bar" id="sel-bar">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#06B6D4" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+    <span id="sel-label" style="color:var(--fg);">0 items selected</span>
+    <span style="color:var(--fg-muted);">· Select items to include in RFQ</span>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="generateRFQ()">
+      Generate RFQ
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+    </button>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);color:var(--fg);display:flex;align-items:center;gap:var(--s-2);box-shadow:var(--shadow-md);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.2s;">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    function toggleGroup(el) {
+      el.classList.toggle('expanded');
+    }
+    function toggleNav() { document.querySelector('.nav').classList.toggle('open'); document.getElementById('nav-backdrop').classList.toggle('open'); }
+    function closeNav()  { document.querySelector('.nav').classList.remove('open'); document.getElementById('nav-backdrop').classList.remove('open'); }
+
+    // Init generate RFQ button as dimmed
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('gen-rfq-btn');
+      btn.style.opacity = '0.4';
+      btn.style.pointerEvents = 'none';
+    });
+
+    function updateSel() {
+      const checked = document.querySelectorAll('.item-chk:checked:not(:disabled)');
+      const n = checked.length;
+      const btn = document.getElementById('gen-rfq-btn');
+      const lbl = document.getElementById('sel-count');
+      lbl.textContent = n > 0 ? n + ' item' + (n !== 1 ? 's' : '') + ' selected' : 'Select items to generate RFQ';
+      btn.style.opacity = n > 0 ? '1' : '0.4';
+      btn.style.pointerEvents = n > 0 ? 'auto' : 'none';
+      // also update floating bar
+      const bar = document.getElementById('sel-bar');
+      const label = document.getElementById('sel-label');
+      if (label) label.textContent = n + ' item' + (n !== 1 ? 's' : '') + ' selected';
+      if (bar) bar.classList.toggle('show', n > 0);
+    }
+
+    function toggleAll(el) {
+      document.querySelectorAll('.item-chk:not(:disabled)').forEach(c => c.checked = el.checked);
+      updateSel();
+    }
+
+    function generateRFQ() {
+      showToast('Opening RFQ generator…');
+      setTimeout(() => window.location.href = 'rfq-create-v2.html', 800);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.style.opacity = '1';
+      setTimeout(() => t.style.opacity = '0', 2800);
+    }
+  </script>
+</body>
+</html>

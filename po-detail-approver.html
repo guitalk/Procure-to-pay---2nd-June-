@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aker Procurement — PO Approval · PO-2026-038</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Approver PO detail ───────────────────────────────── */
+    .po-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding-bottom: 90px;
+    }
+
+    /* Breadcrumb + header */
+    .po-crumb {
+      display: flex; align-items: center; gap: var(--s-2);
+      font-size: var(--fs-sm); color: var(--fg-muted);
+      margin-bottom: var(--s-4);
+    }
+    .po-crumb a { color: var(--fg-muted); }
+    .po-crumb a:hover { color: var(--fg); }
+    .po-crumb-sep { color: var(--border-strong); }
+
+    .po-hero {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: var(--s-4); margin-bottom: var(--s-6);
+    }
+    .po-hero-title {
+      font-size: var(--fs-2xl); font-weight: var(--fw-semibold);
+      letter-spacing: -0.01em; margin-bottom: var(--s-2);
+      display: flex; align-items: center; gap: var(--s-3);
+    }
+    .po-hero-meta {
+      display: flex; flex-wrap: wrap; gap: var(--s-4);
+      font-size: var(--fs-sm); color: var(--fg-muted);
+    }
+    .po-hero-meta strong { color: var(--fg); }
+
+    /* Approver attention banner */
+    .approver-banner {
+      display: flex; align-items: flex-start; gap: var(--s-3);
+      padding: var(--s-4);
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.22);
+      border-radius: var(--r-md);
+      margin-bottom: var(--s-5);
+    }
+
+    /* Two-column layout */
+    .po-body {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: var(--s-5);
+      align-items: start;
+    }
+
+    /* Cards */
+    .po-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: var(--s-4);
+    }
+    .po-card-head {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-4) var(--s-5);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .po-card-icon {
+      width: 28px; height: 28px; border-radius: var(--r-sm);
+      background: var(--accent-soft); color: var(--accent);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .po-card-title { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+    .po-card-sub   { font-size: var(--fs-sm); color: var(--fg-muted); margin-top: 1px; }
+    .po-card-body  { padding: var(--s-5); }
+
+    /* Vendor summary */
+    .vendor-block {
+      display: flex; align-items: center; gap: var(--s-4);
+      padding: var(--s-4);
+      background: var(--bg-elevated); border-radius: var(--r-md);
+      margin-bottom: var(--s-4);
+    }
+    .vendor-avatar {
+      width: 40px; height: 40px; border-radius: var(--r-md);
+      background: var(--accent-soft); color: var(--accent);
+      font-weight: var(--fw-semibold); font-size: var(--fs-md);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .vendor-name { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+    .vendor-meta { font-size: var(--fs-xs); color: var(--fg-muted); margin-top: 2px; }
+
+    /* Section label */
+    .sec-label {
+      font-size: var(--fs-xs); font-weight: var(--fw-medium);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--fg-subtle); margin-bottom: var(--s-3);
+    }
+
+    /* Terms grid */
+    .terms-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--s-3); margin-bottom: var(--s-5); }
+    .term-cell {
+      padding: var(--s-3) var(--s-4);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+    .term-label { font-size: var(--fs-xs); color: var(--fg-subtle); margin-bottom: 4px; }
+    .term-value { font-size: var(--fs-sm); color: var(--fg); font-weight: var(--fw-medium); }
+    .term-deviation {
+      display: flex; align-items: center; gap: 4px;
+      margin-top: 4px; font-size: var(--fs-xs); color: var(--warning);
+    }
+
+    /* Bid summary table */
+    .bid-table { width: 100%; border-collapse: collapse; }
+    .bid-table th {
+      text-align: left; font-size: 10px; font-weight: var(--fw-medium);
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted);
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border); background: var(--bg-elevated);
+      white-space: nowrap;
+    }
+    .bid-table td {
+      padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--fs-sm); vertical-align: middle;
+    }
+    .bid-table tbody tr:last-child td { border-bottom: none; }
+    .bid-table tr.winner td { background: rgba(16,185,129,0.04); }
+    .bid-winner-col { color: var(--success); font-weight: var(--fw-semibold); }
+    .mono { font-family: var(--font-mono); }
+
+    /* Normalization note */
+    .norm-note {
+      display: flex; align-items: flex-start; gap: var(--s-2);
+      padding: var(--s-3) var(--s-4);
+      background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.15);
+      border-radius: var(--r-md); margin-top: var(--s-3);
+      font-size: var(--fs-xs); color: var(--fg-muted); line-height: 1.5;
+    }
+
+    /* Sidebar cards */
+    .side-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: var(--s-4);
+    }
+    .side-card-head {
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+      font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+    }
+    .side-card-body { padding: var(--s-4); }
+
+    /* Internal query thread — Approver outgoing */
+    .iq-thread { display: flex; flex-direction: column; gap: var(--s-3); }
+    .iq-msg {
+      padding: var(--s-3) var(--s-4);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); line-height: 1.5;
+    }
+    .iq-msg.outgoing {
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.18);
+    }
+    .iq-msg.incoming {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+    }
+    .iq-msg-meta {
+      display: flex; align-items: center; gap: var(--s-2);
+      margin-bottom: 6px; font-size: var(--fs-xs);
+    }
+    .iq-author { font-weight: var(--fw-semibold); color: var(--fg); }
+    .iq-time   { color: var(--fg-subtle); }
+    .iq-role   { color: var(--warning); }
+    .iq-body   { color: var(--fg-muted); }
+
+    .iq-compose {
+      margin-top: var(--s-2);
+    }
+    .iq-compose textarea {
+      width: 100%; box-sizing: border-box;
+      padding: var(--s-3); resize: none; height: 80px;
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--fg);
+      font-size: var(--fs-sm); font-family: var(--font-sans);
+      line-height: 1.5;
+    }
+    .iq-compose textarea:focus { outline: none; border-color: var(--warning); }
+    .iq-compose textarea::placeholder { color: var(--fg-subtle); }
+
+    /* Doc chips */
+    .doc-chip {
+      display: flex; align-items: center; gap: var(--s-2);
+      padding: 6px var(--s-3);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md); font-size: var(--fs-xs); color: var(--fg-muted);
+      transition: all 0.12s;
+    }
+    .doc-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Checklist */
+    .check-item {
+      display: flex; align-items: flex-start; gap: var(--s-3);
+      padding: var(--s-3) 0; border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--fs-sm);
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-icon { flex-shrink: 0; margin-top: 1px; }
+    .check-ok   { color: var(--success); }
+    .check-warn { color: var(--warning); }
+    .check-text { color: var(--fg-muted); line-height: 1.4; }
+    .check-text strong { color: var(--fg); }
+
+    /* Approval summary */
+    .approval-summary {
+      padding: var(--s-4); background: rgba(16,185,129,0.05);
+      border: 1px solid rgba(16,185,129,0.18); border-radius: var(--r-md);
+      margin-bottom: var(--s-4);
+    }
+    .approval-val { font-size: var(--fs-2xl); font-weight: var(--fw-semibold); color: var(--success); }
+    .approval-label { font-size: var(--fs-xs); color: var(--fg-subtle); margin-top: 2px; }
+
+    /* Sticky action bar */
+    .approver-bar {
+      position: fixed; bottom: 0; left: var(--nav-w); right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-4) var(--s-8);
+      background: linear-gradient(90deg, #111113 0%, #0d1a13 100%);
+      border-top: 1px solid rgba(16,185,129,0.25);
+      z-index: 20;
+    }
+    .approver-bar-meta { font-size: var(--fs-sm); color: var(--fg-muted); }
+    .approver-bar-meta strong { color: var(--fg); }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      z-index: 100; display: none; align-items: center; justify-content: center;
+      padding: var(--s-5);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--r-xl); width: 100%; max-width: 500px;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      padding: var(--s-5) var(--s-6);
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: var(--fs-lg); font-weight: var(--fw-semibold); margin-bottom: 4px; }
+    .modal-sub   { font-size: var(--fs-sm); color: var(--fg-muted); line-height: 1.5; }
+    .modal-body  { padding: var(--s-5) var(--s-6); overflow-y: auto; flex: 1; }
+    .modal-footer {
+      display: flex; align-items: center; justify-content: flex-end; gap: var(--s-2);
+      padding: var(--s-4) var(--s-6);
+      border-top: 1px solid var(--border); background: var(--bg-elevated); flex-shrink: 0;
+    }
+    .modal-label { font-size: var(--fs-xs); font-weight: var(--fw-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); margin-bottom: var(--s-2); }
+    .modal-textarea {
+      width: 100%; padding: var(--s-3); resize: none; min-height: 80px;
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--fg);
+      font-size: var(--fs-sm); font-family: var(--font-sans); line-height: 1.5;
+    }
+    .modal-textarea:focus { outline: none; border-color: var(--accent); }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: var(--s-3) var(--s-4);
+      font-size: var(--fs-sm); color: var(--fg); display: flex; align-items: center; gap: var(--s-2);
+      box-shadow: var(--shadow-md); z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .toast.show { opacity: 1; }
+  
+    /* Back navigation */
+    .back-nav {
+      display: flex; align-items: center; gap: var(--s-2);
+      margin-bottom: var(--s-5);
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); font-weight: 500;
+      color: var(--fg-muted); text-decoration: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    .back-btn:hover { color: var(--fg); background: var(--bg-hover); }
+    .back-btn svg { flex-shrink: 0; }
+    .back-crumb-sep { color: var(--border-strong); font-size: var(--fs-sm); }
+    .back-crumb-current { font-size: var(--fs-sm); color: var(--fg); font-weight: 500; }
+  </style>
+</head>
+<body class="app">
+
+  <!-- ── Sidebar nav (Approver role) ────────────────────────── -->
+  <aside class="nav">
+    <div class="nav-brand">
+      <button class="hamburger-btn" onclick="toggleNav()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+      <div class="nav-brand-text">
+        <div class="nav-brand-name">Procure</div>
+        <div class="nav-brand-sub">Procurement</div>
+      </div>
+    </div>
+        <div class="nav-items">
+      <a class="nav-item" href="dashboard.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header" href="clients.html" onclick="toggleGroup(this)">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V7l6-4 6 4v7zM6 14V9h4v5"/></svg>
+          <span>Master Data</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="clients.html">Clients</a>
+          <a class="nav-item nav-sub-item" href="projects.html">Projects</a>
+          <a class="nav-item nav-sub-item" href="vendor-categories.html">Categories</a>
+          <a class="nav-item nav-sub-item" href="terms-conditions.html">Terms &amp; Conditions</a>
+          <a class="nav-item nav-sub-item" href="payment-terms.html">Payment Terms</a>
+          <a class="nav-item nav-sub-item" href="inco-terms.html">Inco Terms</a>
+          <a class="nav-item nav-sub-item" href="uom.html">Unit of Measure</a>
+          <a class="nav-item nav-sub-item" href="additional-costs.html">Additional Costs</a>
+          <a class="nav-item nav-sub-item" href="vendors.html">Vendors</a>
+        </div>
+      </div>
+      <a class="nav-item" href="pr-list-v2.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M5 8h6M5 11h4"/></svg>
+        <span>Purchase Requisitions</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header expanded" href="rfq-list-v2.html">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2z"/><path d="M2 4l6 5 6-5"/></svg>
+          <span>RFQs</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="rfq-list-v2.html">All RFQs</a>
+          <a class="nav-item nav-sub-item" href="rfq-create-v2.html">New RFQ</a>
+        </div>
+      </div>
+      <a class="nav-item active" href="purchase-orders.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l1.5 8.5a1 1 0 0 0 1 .85h7a1 1 0 0 0 1-.85L14 4"/><path d="M2 4h12M6 7v3M10 7v3"/></svg>
+        <span>Purchase Orders</span>
+      </a>
+    </div>
+    <div class="nav-footer">
+      <div class="user-card">
+        <div class="avatar" style="background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid rgba(168,85,247,0.3);">PS</div>
+        <div>
+          <div class="user-name">Priya Sharma</div>
+          <div class="user-email">Approver</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="nav-backdrop" id="nav-backdrop" onclick="closeNav()"></div>
+
+  <!-- ── Main ───────────────────────────────────────────────── -->
+  <main class="main" style="padding-bottom: 90px;">
+    <div class="po-wrap">
+
+      <!-- Breadcrumb -->
+    <div class="back-nav">
+      <a class="back-btn" href="purchase-orders.html"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4L6 8l4 4"/></svg> Purchase Orders</a>
+      <span class="back-crumb-sep">/</span>
+      <span class="back-crumb-current">PO-2026-029</span>
+    </div>
+      <!-- Hero -->
+      <div class="po-hero">
+        <div>
+          <div class="po-hero-title">
+            PO-2026-038
+            <span class="badge badge-warning">Pending Your Approval</span>
+          </div>
+          <div class="po-hero-meta">
+            <span>Project: <strong>FPSO Njord Refit — Phase 3</strong></span>
+            <span>Category: <strong>Instrumentation &amp; Control</strong></span>
+            <span>From RFQ: <strong class="mono">RFQ-2026-038</strong></span>
+            <span>Submitted by Purchase: <strong>15 May 2026</strong></span>
+          </div>
+        </div>
+        <a href="#" class="doc-chip" style="white-space:nowrap;">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2h5.5L10 4.5V10H2V2Z" stroke="currentColor" stroke-width="1.2"/><path d="M7 2v3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+          PO_Draft_2026-038.pdf
+        </a>
+      </div>
+
+      <!-- Approver attention banner -->
+      <div class="approver-banner">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#F59E0B" stroke-width="1.5" style="flex-shrink:0;margin-top:1px;"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="11" r=".5" fill="#F59E0B"/></svg>
+        <div>
+          <div style="font-size:var(--fs-sm); font-weight:var(--fw-semibold); color:var(--warning); margin-bottom:3px;">1 item requires your attention before approval</div>
+          <div style="font-size:var(--fs-sm); color:var(--fg-muted);">Inco Terms deviation (FOB vs CIF) — vendor proposed FOB Mumbai Port against the RFQ-specified CIF. Purchase has provided a justification document. Review before signing off.</div>
+        </div>
+      </div>
+
+      <!-- ── Two-column body ─────────────────────────────────── -->
+      <div class="po-body">
+
+        <!-- ── LEFT: Main content ──────────────────────────── -->
+        <div>
+
+          <!-- Selected Vendor -->
+          <div class="po-card">
+            <div class="po-card-head">
+              <div class="po-card-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="2.5"/><path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+              </div>
+              <div>
+                <div class="po-card-title">Selected Vendor</div>
+                <div class="po-card-sub">Awarded after bid matrix evaluation · L1 on normalized commercial basis</div>
+              </div>
+              <div style="margin-left:auto;">
+                <span class="badge" style="background:rgba(16,185,129,0.10);color:var(--success);">L1</span>
+              </div>
+            </div>
+            <div class="po-card-body">
+              <div class="vendor-block">
+                <div class="vendor-avatar">FI</div>
+                <div style="flex:1;">
+                  <div class="vendor-name">Flowline Industries Ltd</div>
+                  <div class="vendor-meta">GST: 27AAACF1234P1Z5 · Nashik, Maharashtra · Instrumentation &amp; Control</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:var(--s-1);text-align:right;">
+                  <span class="badge badge-success">Technically Approved</span>
+                  <span class="badge" style="font-size:10px;background:rgba(16,185,129,0.08);color:var(--success);">Approved Vendor</span>
+                </div>
+              </div>
+              <div class="sec-label">Commercial Terms</div>
+              <div class="terms-grid">
+                <div class="term-cell">
+                  <div class="term-label">Inco Terms</div>
+                  <div class="term-value">FOB — Mumbai Port</div>
+                  <div class="term-deviation">
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l5.2 9H2.8z"/><path d="M8 6v3" stroke-linecap="round"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>
+                    Deviation · RFQ specified CIF
+                  </div>
+                </div>
+                <div class="term-cell">
+                  <div class="term-label">Payment Terms</div>
+                  <div class="term-value">30% advance, 70% on delivery</div>
+                </div>
+                <div class="term-cell">
+                  <div class="term-label">Delivery Timeline</div>
+                  <div class="term-value">12 weeks from PO date</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bid Comparison Summary -->
+          <div class="po-card">
+            <div class="po-card-head">
+              <div class="po-card-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13V6l4-4h6l2 2v9H2zM6 2v4H2"/><path d="M6 9h4M6 11h2"/></svg>
+              </div>
+              <div>
+                <div class="po-card-title">Bid Comparison Summary</div>
+                <div class="po-card-sub">Normalized commercial evaluation · 3 vendors participated</div>
+              </div>
+              <a href="bid-matrix.html" class="btn btn-ghost btn-sm" style="margin-left:auto;">View Full Matrix →</a>
+            </div>
+            <div class="po-card-body" style="padding:0;">
+              <table class="bid-table">
+                <thead>
+                  <tr>
+                    <th>Vendor</th>
+                    <th>Quoted (INR)</th>
+                    <th>Transport</th>
+                    <th>Insurance</th>
+                    <th>Normalized Total</th>
+                    <th>Rank</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="winner">
+                    <td><strong class="bid-winner-col">Flowline Industries Ltd</strong></td>
+                    <td class="mono">₹7,94,200</td>
+                    <td class="mono">₹28,000</td>
+                    <td class="mono">₹25,974</td>
+                    <td class="mono bid-winner-col">₹8,48,174</td>
+                    <td><span class="badge" style="background:rgba(16,185,129,0.12);color:var(--success);">L1</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--fg-muted);">Atlas Process Controls</td>
+                    <td class="mono" style="color:var(--fg-muted);">₹8,32,000</td>
+                    <td class="mono" style="color:var(--fg-muted);">₹18,500</td>
+                    <td class="mono" style="color:var(--fg-muted);">₹25,974</td>
+                    <td class="mono" style="color:var(--fg-muted);">₹8,76,474</td>
+                    <td><span class="badge" style="background:var(--bg-elevated);color:var(--fg-subtle);">L2</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--fg-muted);">Bharat Control Systems</td>
+                    <td class="mono" style="color:var(--fg-muted);">₹8,65,000</td>
+                    <td class="mono" style="color:var(--fg-muted);">₹32,000</td>
+                    <td class="mono" style="color:var(--fg-muted);">₹25,974</td>
+                    <td class="mono" style="color:var(--fg-muted);">₹9,22,974</td>
+                    <td><span class="badge" style="background:var(--bg-elevated);color:var(--fg-subtle);">L3</span></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div style="padding:var(--s-4);">
+                <div class="norm-note">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#06B6D4" stroke-width="1.5" style="flex-shrink:0;margin-top:1px;"><circle cx="8" cy="8" r="6"/><path d="M8 5.5v5"/><circle cx="8" cy="5" r=".5" fill="#06B6D4"/></svg>
+                  Insurance (₹25,974) normalized by Purchase using standard market rate for all vendors — Bharat Control Systems had omitted this cost. Normalization logged in audit trail.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pre-approval checklist -->
+          <div class="po-card">
+            <div class="po-card-head">
+              <div class="po-card-icon" style="background:rgba(16,185,129,0.10);color:var(--success);">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+              </div>
+              <div>
+                <div class="po-card-title">Pre-Approval Checklist</div>
+                <div class="po-card-sub">Items Purchase has completed before routing to you</div>
+              </div>
+              <div style="margin-left:auto;">
+                <span class="badge" style="background:rgba(245,158,11,0.10);color:var(--warning);">4 / 5</span>
+              </div>
+            </div>
+            <div class="po-card-body">
+              <div class="check-item">
+                <svg class="check-icon check-ok" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                <div class="check-text"><strong>Technical bid approved</strong> — Flowline approved by S. Mehta (Engineering Lead) on 10 May 2026</div>
+              </div>
+              <div class="check-item">
+                <svg class="check-icon check-ok" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                <div class="check-text"><strong>Commercial evaluation complete</strong> — normalized comparison across 3 vendors</div>
+              </div>
+              <div class="check-item">
+                <svg class="check-icon check-ok" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                <div class="check-text"><strong>Vendor panel status confirmed</strong> — Flowline Industries is an approved, active vendor</div>
+              </div>
+              <div class="check-item">
+                <svg class="check-icon check-ok" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+                <div class="check-text"><strong>PO draft generated</strong> — PDF attached above for review</div>
+              </div>
+              <div class="check-item">
+                <svg class="check-icon check-warn" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l5.2 9H2.8z"/><path d="M8 6v3" stroke-linecap="round"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>
+                <div class="check-text"><strong>Inco Terms deviation acknowledged</strong> — FOB vs CIF. Purchase justification document attached. <span style="color:var(--warning);">Requires your sign-off.</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /left -->
+
+        <!-- ── RIGHT: Sidebar ─────────────────────────────── -->
+        <div>
+
+          <!-- Approval summary -->
+          <div class="side-card">
+            <div class="side-card-head">PO Value</div>
+            <div class="side-card-body">
+              <div class="approval-summary">
+                <div class="approval-val">₹8,48,174</div>
+                <div class="approval-label">Normalized total · GST 18% additional at invoice</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:var(--s-2);">
+                <div style="display:flex;justify-content:space-between;font-size:var(--fs-sm);">
+                  <span style="color:var(--fg-muted);">Vendor quoted</span>
+                  <span class="mono">₹7,94,200</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:var(--fs-sm);">
+                  <span style="color:var(--fg-muted);">Transport (FOB)</span>
+                  <span class="mono">₹28,000</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:var(--fs-sm);">
+                  <span style="color:var(--fg-muted);">Insurance (normalized)</span>
+                  <span class="mono">₹25,974</span>
+                </div>
+                <div style="border-top:1px solid var(--border);margin:var(--s-2) 0;"></div>
+                <div style="display:flex;justify-content:space-between;font-size:var(--fs-sm);font-weight:var(--fw-semibold);">
+                  <span>Total</span>
+                  <span class="mono">₹8,48,174</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Internal Query thread -->
+          <div class="side-card">
+            <div class="side-card-head" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>Internal Query</span>
+              <span class="badge badge-warning" style="font-size:10px;">Awaiting Reply</span>
+            </div>
+            <div class="side-card-body">
+              <div class="iq-thread">
+                <!-- Approver's outgoing query -->
+                <div class="iq-msg outgoing">
+                  <div class="iq-msg-meta">
+                    <span class="iq-author">P. Sharma</span>
+                    <span class="iq-role">(You · Approver)</span>
+                    <span class="iq-time" style="margin-left:auto;">15 May · 11:30</span>
+                  </div>
+                  <div class="iq-body">The Inco Terms deviation (FOB vs CIF) needs a written justification before I can sign off. Please confirm the transport cost is fully captured in the normalized line.</div>
+                </div>
+                <!-- Purchase reply -->
+                <div class="iq-msg incoming">
+                  <div class="iq-msg-meta">
+                    <span class="iq-author">V. Nair</span>
+                    <span style="color:var(--info);font-size:var(--fs-xs);">(Purchase)</span>
+                    <span class="iq-time" style="margin-left:auto;">15 May · 14:05</span>
+                  </div>
+                  <div class="iq-body">Confirmed — FOB was negotiated as the vendor's factory is certified for FOB dispatch and it reduces their lead time by 2 weeks. Transport cost of ₹28,000 is explicitly captured in the normalized total. Justification PDF attached.</div>
+                </div>
+              </div>
+              <div class="iq-compose" style="margin-top:var(--s-3);">
+                <div style="font-size:var(--fs-xs);color:var(--fg-subtle);margin-bottom:var(--s-2);">Reply or raise a follow-up:</div>
+                <textarea placeholder="Type a follow-up query or close the thread by approving…"></textarea>
+                <div style="display:flex;justify-content:flex-end;margin-top:var(--s-2);">
+                  <button class="btn btn-secondary btn-sm" onclick="showToast('Query sent to Purchase')">Send Query</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documents -->
+          <div class="side-card">
+            <div class="side-card-head">Documents</div>
+            <div class="side-card-body" style="display:flex;flex-direction:column;gap:var(--s-2);">
+              <a class="doc-chip" href="#">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2h5.5L10 4.5V10H2V2Z" stroke="currentColor" stroke-width="1.2"/><path d="M7 2v3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+                PO_Draft_2026-038.pdf
+              </a>
+              <a class="doc-chip" href="#">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2h5.5L10 4.5V10H2V2Z" stroke="currentColor" stroke-width="1.2"/><path d="M7 2v3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+                Bid_Matrix_RFQ-038.xlsx
+              </a>
+              <a class="doc-chip" href="#">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2h5.5L10 4.5V10H2V2Z" stroke="currentColor" stroke-width="1.2"/><path d="M7 2v3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+                Inco_Deviation_Justification.pdf
+              </a>
+              <a class="doc-chip" href="#">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2h5.5L10 4.5V10H2V2Z" stroke="currentColor" stroke-width="1.2"/><path d="M7 2v3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+                TechEval_Summary_RFQ-038.pdf
+              </a>
+            </div>
+          </div>
+
+        </div><!-- /right -->
+      </div><!-- /po-body -->
+    </div><!-- /po-wrap -->
+  </main>
+
+  <!-- ── Approver action bar ────────────────────────────────── -->
+  <div class="approver-bar">
+    <div class="approver-bar-meta">
+      Reviewing <strong>PO-2026-038</strong> · Flowline Industries Ltd · <strong>₹8,48,174</strong>
+    </div>
+    <div style="display:flex; align-items:center; gap:var(--s-3);">
+      <button class="btn btn-ghost" onclick="openQueryModal()">Raise Internal Query</button>
+      <button class="btn btn-secondary" style="border-color:var(--danger);color:var(--danger);" onclick="openSendBackModal()">Send Back to Purchase</button>
+      <button class="btn btn-primary" style="background:var(--success); border-color:var(--success);" onclick="openApproveModal()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+        Approve &amp; Issue PO
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Approve modal ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="approve-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Issue Purchase Order</div>
+        <div class="modal-sub">You are approving <strong>PO-2026-038</strong> for <strong>Flowline Industries Ltd</strong> · ₹8,48,174. A PDF PO will be generated and the vendor will be notified. This action is audited and irreversible.</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-label">Approval Note (optional)</div>
+        <textarea class="modal-textarea" placeholder="Add an internal approval comment — e.g. acknowledging the Inco Terms deviation justification…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('approve-modal')">Cancel</button>
+        <button class="btn btn-primary" style="background:var(--success);border-color:var(--success);" onclick="confirmApprove()">Confirm &amp; Issue PO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Send back modal ───────────────────────────────────── -->
+  <div class="modal-overlay" id="sendback-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Send Back to Purchase</div>
+        <div class="modal-sub">PO-2026-038 will be returned to Purchase for revision. A mandatory comment is required explaining what needs to be addressed before resubmission.</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-label">Reason for Returning <span style="color:var(--danger);">*</span></div>
+        <textarea class="modal-textarea" placeholder="Explain what Purchase must address before resubmitting for approval…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('sendback-modal')">Cancel</button>
+        <button class="btn btn-secondary" style="border-color:var(--danger);color:var(--danger);" onclick="confirmSendBack()">Send Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Raise Query modal ─────────────────────────────────── -->
+  <div class="modal-overlay" id="query-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Raise Internal Query</div>
+        <div class="modal-sub">Your query will be sent to Purchase. PO status changes to <strong>Internal Query</strong> and approval is on hold until Purchase responds.</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-label">Query <span style="color:var(--danger);">*</span></div>
+        <textarea class="modal-textarea" placeholder="Describe what needs clarification before you can approve…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('query-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmQuery()">Send Query to Purchase</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    function toggleGroup(el) {
+      el.classList.toggle('expanded');
+    }
+    function toggleNav() { document.querySelector('.nav').classList.toggle('open'); document.getElementById('nav-backdrop').classList.toggle('open'); }
+    function closeNav()  { document.querySelector('.nav').classList.remove('open'); document.getElementById('nav-backdrop').classList.remove('open'); }
+
+    function openApproveModal()  { document.getElementById('approve-modal').classList.add('open'); }
+    function openSendBackModal() { document.getElementById('sendback-modal').classList.add('open'); }
+    function openQueryModal()    { document.getElementById('query-modal').classList.add('open'); }
+    function closeModal(id)      { document.getElementById(id).classList.remove('open'); }
+
+    function confirmApprove() {
+      closeModal('approve-modal');
+      showToast('PO-2026-038 approved and issued · Flowline Industries notified');
+      setTimeout(() => { window.location.href = 'purchase-orders.html'; }, 2000);
+    }
+    function confirmSendBack() {
+      closeModal('sendback-modal');
+      showToast('PO-2026-038 returned to Purchase for revision');
+      setTimeout(() => { window.location.href = 'purchase-orders.html'; }, 2000);
+    }
+    function confirmQuery() {
+      closeModal('query-modal');
+      showToast('Internal query raised · Purchase notified · PO on hold');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(o => {
+      o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+    });
+  </script>
+</body>
+</html>

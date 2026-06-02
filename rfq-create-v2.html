@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aker — New RFQ from PR-2026-018</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .v2-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.3); border-radius: 999px;
+      font-size: 10px; font-weight: 600; color: #a855f7;
+      letter-spacing: 0.06em; margin-bottom: var(--s-4);
+    }
+
+    /* ── Step indicator ──────────────────────────────────── */
+    .step-bar {
+      display: flex; align-items: center; gap: 0;
+      margin-bottom: var(--s-6);
+    }
+    .step-item {
+      display: flex; align-items: center; gap: var(--s-2);
+      flex: 1; position: relative;
+    }
+    .step-item:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: calc(28px + var(--s-2)); right: 0; top: 14px;
+      height: 1px; background: var(--border);
+    }
+    .step-item.done:not(:last-child)::after,
+    .step-item.active:not(:last-child)::after { background: var(--accent); }
+    .step-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: var(--fs-sm); font-weight: 600;
+      flex-shrink: 0; position: relative; z-index: 1;
+    }
+    .step-item.pending .step-dot { background: var(--bg-elevated); color: var(--fg-subtle); border: 1.5px solid var(--border); }
+    .step-item.active  .step-dot { background: var(--accent); color: white; }
+    .step-item.done    .step-dot { background: var(--success); color: white; }
+    .step-label { font-size: var(--fs-sm); font-weight: 500; }
+    .step-item.active .step-label { color: var(--fg); }
+    .step-item.pending .step-label { color: var(--fg-subtle); }
+    .step-item.done .step-label { color: var(--fg-muted); }
+
+    /* ── Source banner ───────────────────────────────────── */
+    .source-banner {
+      display: flex; align-items: center; gap: var(--s-4);
+      padding: var(--s-4) var(--s-5);
+      background: rgba(6,182,212,0.06);
+      border: 1px solid rgba(6,182,212,0.18);
+      border-radius: var(--r-lg); margin-bottom: var(--s-5);
+    }
+    .source-icon {
+      width: 36px; height: 36px; border-radius: var(--r-md);
+      background: var(--accent-soft); color: var(--accent);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .source-label { font-size: var(--fs-xs); color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .source-value { font-size: var(--fs-sm); font-weight: 600; color: var(--fg); }
+    .source-meta  { font-size: var(--fs-xs); color: var(--fg-muted); margin-top: 2px; }
+    .source-div   { width: 1px; height: 40px; background: var(--border); }
+
+    /* ── Section cards ───────────────────────────────────── */
+    .sec {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden; margin-bottom: var(--s-4);
+    }
+    .sec-head {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-4) var(--s-5);
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+    .sec-icon {
+      width: 28px; height: 28px; border-radius: var(--r-sm);
+      background: var(--accent-soft); color: var(--accent);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .sec-title { font-size: var(--fs-md); font-weight: 600; }
+    .sec-sub   { font-size: var(--fs-sm); color: var(--fg-muted); margin-top: 1px; }
+    .sec-body  { padding: var(--s-5); }
+
+    /* ── Form fields ─────────────────────────────────────── */
+    .form-grid   { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--s-4); }
+    .form-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: var(--s-4); }
+    .col-span-2  { grid-column: span 2; }
+    .col-span-3  { grid-column: span 3; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field-label {
+      font-size: var(--fs-xs); font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted);
+    }
+    .field-req { color: var(--danger); margin-left: 2px; }
+    .field-input {
+      width: 100%; padding: 8px var(--s-3);
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--fg);
+      font-size: var(--fs-sm); font-family: var(--font-sans);
+      transition: border-color 0.12s;
+    }
+    .field-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .field-input::placeholder { color: var(--fg-subtle); }
+    .field-input.sel {
+      cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 16 16' fill='none' stroke='%2371717a' stroke-width='1.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px;
+    }
+    .field-readonly {
+      padding: 8px var(--s-3); background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      font-size: var(--fs-sm); color: var(--fg-muted);
+    }
+    .field-hint { font-size: var(--fs-xs); color: var(--fg-subtle); }
+
+    /* ── Line items table ────────────────────────────────── */
+    .li-table { width: 100%; border-collapse: collapse; }
+    .li-table th {
+      text-align: left; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted);
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border); background: var(--bg-elevated);
+      white-space: nowrap;
+    }
+    .li-table td {
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--fs-sm); vertical-align: middle;
+    }
+    .li-table tbody tr:last-child td { border-bottom: none; }
+    .qty-edit {
+      width: 72px; padding: 6px 8px;
+      background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.35);
+      border-radius: var(--r-sm); color: var(--fg);
+      font-size: var(--fs-sm); font-family: var(--font-mono); text-align: center;
+    }
+    .qty-edit:focus { outline: none; border-color: var(--warning); }
+    .fpill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 8px; background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      font-size: 11px; color: var(--fg-muted);
+    }
+
+    /* ── Vendor selection (step 2) ───────────────────────── */
+    .vendor-search-row {
+      display: flex; gap: var(--s-3); align-items: center;
+      margin-bottom: var(--s-4);
+    }
+    .vendor-search-input {
+      flex: 1; padding: 8px var(--s-3);
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: var(--r-md); color: var(--fg);
+      font-size: var(--fs-sm); font-family: var(--font-sans);
+    }
+    .vendor-search-input:focus { outline: none; border-color: var(--accent); }
+    .vendor-search-input::placeholder { color: var(--fg-subtle); }
+
+    .vendor-grid { display: flex; flex-direction: column; gap: var(--s-2); }
+    .vendor-row {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-3) var(--s-4);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md); cursor: pointer; transition: all 0.12s;
+      user-select: none;
+    }
+    .vendor-row:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+    .vendor-row.selected { border-color: var(--accent); background: rgba(6,182,212,0.05); }
+    .vendor-row.disabled { opacity: 0.5; cursor: default; pointer-events: none; }
+    .vendor-chk { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+    .vendor-avatar {
+      width: 32px; height: 32px; border-radius: var(--r-sm);
+      background: var(--bg-hover); color: var(--fg-muted);
+      font-size: 11px; font-weight: 700;
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .vendor-name { font-size: var(--fs-sm); font-weight: 600; }
+    .vendor-meta { font-size: var(--fs-xs); color: var(--fg-muted); margin-top: 1px; }
+
+    /* Selected vendor summary chips */
+    .vendor-summary { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+    .v-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; background: var(--accent-soft);
+      border: 1px solid rgba(6,182,212,0.25); border-radius: 999px;
+      font-size: var(--fs-xs); color: var(--accent);
+    }
+
+    /* ── Sticky footer ───────────────────────────────────── */
+    .rfq-footer {
+      position: fixed; bottom: 0; left: var(--nav-w); right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-4) var(--s-8);
+      background: var(--bg-elevated); border-top: 1px solid var(--border);
+      z-index: 20;
+    }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: var(--s-3) var(--s-4);
+      font-size: var(--fs-sm); color: var(--fg); display: flex; align-items: center; gap: var(--s-2);
+      box-shadow: var(--shadow-md); z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    .mono { font-family: var(--font-mono); }
+  
+    /* Back navigation */
+    .back-nav {
+      display: flex; align-items: center; gap: var(--s-2);
+      margin-bottom: var(--s-5);
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      font-size: var(--fs-sm); font-weight: 500;
+      color: var(--fg-muted); text-decoration: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    .back-btn:hover { color: var(--fg); background: var(--bg-hover); }
+    .back-btn svg { flex-shrink: 0; }
+    .back-crumb-sep { color: var(--border-strong); font-size: var(--fs-sm); }
+    .back-crumb-current { font-size: var(--fs-sm); color: var(--fg); font-weight: 500; }
+  </style>
+</head>
+<body class="app">
+
+  <!-- ── Nav ───────────────────────────────────────────────── -->
+  <aside class="nav">
+    <div class="nav-brand">
+      <button class="hamburger-btn" onclick="toggleNav()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+      <div class="nav-brand-text">
+        <div class="nav-brand-name">Procure</div>
+        <div class="nav-brand-sub">Procurement</div>
+      </div>
+    </div>
+        <div class="nav-items">
+      <a class="nav-item" href="dashboard.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header" href="clients.html" onclick="toggleGroup(this)">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V7l6-4 6 4v7zM6 14V9h4v5"/></svg>
+          <span>Master Data</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="clients.html">Clients</a>
+          <a class="nav-item nav-sub-item" href="projects.html">Projects</a>
+          <a class="nav-item nav-sub-item" href="vendor-categories.html">Categories</a>
+          <a class="nav-item nav-sub-item" href="terms-conditions.html">Terms &amp; Conditions</a>
+          <a class="nav-item nav-sub-item" href="payment-terms.html">Payment Terms</a>
+          <a class="nav-item nav-sub-item" href="inco-terms.html">Inco Terms</a>
+          <a class="nav-item nav-sub-item" href="uom.html">Unit of Measure</a>
+          <a class="nav-item nav-sub-item" href="additional-costs.html">Additional Costs</a>
+          <a class="nav-item nav-sub-item" href="vendors.html">Vendors</a>
+        </div>
+      </div>
+      <a class="nav-item" href="pr-list-v2.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M5 8h6M5 11h4"/></svg>
+        <span>Purchase Requisitions</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header expanded has-active" href="rfq-list-v2.html">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2z"/><path d="M2 4l6 5 6-5"/></svg>
+          <span>RFQs</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="rfq-list-v2.html">All RFQs</a>
+          <a class="nav-item nav-sub-item  active" href="rfq-create-v2.html">New RFQ</a>
+        </div>
+      </div>
+      <a class="nav-item" href="purchase-orders.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l1.5 8.5a1 1 0 0 0 1 .85h7a1 1 0 0 0 1-.85L14 4"/><path d="M2 4h12M6 7v3M10 7v3"/></svg>
+        <span>Purchase Orders</span>
+      </a>
+    </div>
+    <div class="nav-footer">
+      <div class="user-card">
+        <div class="avatar" style="background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3);">VN</div>
+        <div>
+          <div class="user-name">V. Nair</div>
+          <div class="user-email">Purchase</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="nav-backdrop" id="nav-backdrop" onclick="closeNav()"></div>
+
+  <!-- ── Main ─────────────────────────────────────────────── -->
+  <main class="main" style="padding-bottom:90px;">
+
+    
+
+    <div class="back-nav">
+      <a class="back-btn" href="pr-detail-v2.html"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4L6 8l4 4"/></svg> PR-2026-018</a>
+      <span class="back-crumb-sep">/</span>
+      <span class="back-crumb-current">New RFQ</span>
+    </div>
+
+    <!-- Page title -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-5);">
+      <div>
+        <h1 style="font-size:var(--fs-2xl);font-weight:700;letter-spacing:-0.01em;margin-bottom:4px;">New RFQ</h1>
+        <div style="font-size:var(--fs-sm);color:var(--fg-muted);">Generated from PR-2026-018 · V. Nair · Purchase</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--fg-subtle);">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1"/></svg>
+        Draft auto-saved 14:22
+      </div>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="step-bar">
+      <div class="step-item active" id="step-indicator-1">
+        <div class="step-dot" id="dot-1">1</div>
+        <div>
+          <div class="step-label">RFQ Details</div>
+        </div>
+      </div>
+      <div class="step-item pending" id="step-indicator-2">
+        <div class="step-dot" id="dot-2">2</div>
+        <div>
+          <div class="step-label">Invite Vendors</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Source PR banner -->
+    <div class="source-banner">
+      <div class="source-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/></svg>
+      </div>
+      <div>
+        <div class="source-label">Source PR</div>
+        <div class="source-value">PR-2026-018 · Mechanical Piping — Utility Deck</div>
+        <div class="source-meta">FPSO Njord Refit — Phase 3 · Approved by S. Mehta</div>
+      </div>
+      <div class="source-div"></div>
+      <div>
+        <div class="source-label">Items in this RFQ</div>
+        <div class="source-value">2 of 8 line items</div>
+        <div class="source-meta">Items 07 &amp; 08 · Piping &amp; Valves</div>
+      </div>
+      <a href="pr-detail-v2.html" style="margin-left:auto;font-size:var(--fs-xs);color:var(--accent);white-space:nowrap;">View PR →</a>
+    </div>
+
+    <!-- ══════════════ STEP 1 ══════════════ -->
+    <div id="step1">
+
+      <!-- RFQ Header -->
+      <div class="sec">
+        <div class="sec-head">
+          <div class="sec-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2z"/><path d="M2 4l6 5 6-5"/></svg>
+          </div>
+          <div>
+            <div class="sec-title">RFQ Details</div>
+            <div class="sec-sub">Auto-filled from PR — edit as needed</div>
+          </div>
+          <div style="margin-left:auto;"><span class="badge" style="background:rgba(6,182,212,0.10);color:var(--info);">Draft</span></div>
+        </div>
+        <div class="sec-body">
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field">
+              <label class="field-label">RFQ Number</label>
+              <div class="field-readonly mono">RFQ-2026-044</div>
+              <div class="field-hint">Auto-assigned on publish</div>
+            </div>
+            <div class="field">
+              <label class="field-label">Client / Project</label>
+              <div class="field-readonly">Aker Solutions ASA · FPSO Njord Refit Ph.3</div>
+            </div>
+            <div class="field">
+              <label class="field-label">Category</label>
+              <div class="field-readonly">Piping &amp; Valves</div>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:var(--s-4);">
+            <label class="field-label">RFQ Description <span class="field-req">*</span></label>
+            <input class="field-input" value="Procurement of pipe fittings and gasket set — Utility Deck, FPSO Njord Refit Phase 3" />
+          </div>
+          <div class="form-grid" style="margin-bottom:var(--s-4);">
+            <div class="field">
+              <label class="field-label">Technical Bid Deadline <span class="field-req">*</span></label>
+              <input type="date" class="field-input" value="2026-07-15" />
+            </div>
+            <div class="field">
+              <label class="field-label">Commercial Bid Deadline <span class="field-req">*</span></label>
+              <input type="date" class="field-input" value="2026-07-30" />
+            </div>
+            <div class="field">
+              <label class="field-label">Delivery Required By</label>
+              <input type="date" class="field-input" value="2026-09-30" />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label">Inco Terms <span class="field-req">*</span></label>
+              <select class="field-input sel">
+                <option selected>CIF — Mumbai Port</option>
+                <option>FOB — Vendor Works</option>
+                <option>DDP — Site</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Payment Terms <span class="field-req">*</span></label>
+              <select class="field-input sel">
+                <option selected>30% advance, 70% on delivery</option>
+                <option>100% on delivery</option>
+                <option>LC at sight</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">T&amp;C Package <span class="field-req">*</span></label>
+              <select class="field-input sel">
+                <option selected>Standard Offshore</option>
+                <option>Expedited Supply</option>
+                <option>Custom</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Line Items -->
+      <div class="sec">
+        <div class="sec-head">
+          <div class="sec-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h5"/></svg>
+          </div>
+          <div>
+            <div class="sec-title">Line Items</div>
+            <div class="sec-sub">Pre-filled from PR · Adjust RFQ quantity if procuring a partial quantity</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(245,158,11,0.10);color:var(--warning);">✎ RFQ Qty is editable</span>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="li-table">
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th>
+                <th style="min-width:220px;">Description</th>
+                <th>Category</th>
+                <th style="width:80px;">PR Qty</th>
+                <th style="width:100px;background:rgba(245,158,11,0.06);color:var(--warning);">RFQ Qty ✎</th>
+                <th style="width:60px;">Unit</th>
+                <th>Specs / Drawings</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="color:var(--fg-subtle);font-size:11px;">07</td>
+                <td style="font-weight:500;">Pipe Fittings Pack — 90° Elbows, SS316L</td>
+                <td style="color:var(--fg-muted);">Piping</td>
+                <td class="mono" style="color:var(--fg-subtle);">48</td>
+                <td style="background:rgba(245,158,11,0.03);">
+                  <input class="qty-edit" type="number" value="48" min="1" max="48" />
+                </td>
+                <td style="color:var(--fg-muted);">No.</td>
+                <td>
+                  <span class="fpill"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9H3z"/></svg>Fittings_Spec.pdf</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--fg-subtle);font-size:11px;">08</td>
+                <td style="font-weight:500;">Gasket &amp; Stud Set — Class 300</td>
+                <td style="color:var(--fg-muted);">Fittings</td>
+                <td class="mono" style="color:var(--fg-subtle);">1</td>
+                <td style="background:rgba(245,158,11,0.03);">
+                  <input class="qty-edit" type="number" value="1" min="1" max="1" />
+                </td>
+                <td style="color:var(--fg-muted);">Lot</td>
+                <td><span style="font-size:var(--fs-xs);color:var(--fg-subtle);font-style:italic;">Standard item</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:var(--s-3) var(--s-5);border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--fg-subtle);">
+          If RFQ Qty &lt; PR Qty, the remaining stays on PR-2026-018 as Approved and can be included in a future RFQ.
+        </div>
+      </div>
+
+
+    </div><!-- /step1 -->
+
+    <!-- ══════════════ STEP 2 ══════════════ -->
+    <div id="step2" style="display:none;">
+
+      <div class="sec">
+        <div class="sec-head">
+          <div class="sec-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2"/><path d="M2 13c0-2.8 1.8-5 4-5"/><circle cx="11" cy="8" r="2.5"/><path d="M8.5 13c0-1.9 1.1-3.5 2.5-3.5s2.5 1.6 2.5 3.5"/></svg>
+          </div>
+          <div>
+            <div class="sec-title">Invite Vendors</div>
+            <div class="sec-sub">Select from the approved vendor panel · filtered by category</div>
+          </div>
+          <div style="margin-left:auto;" id="vendor-count-chip"></div>
+        </div>
+        <div class="sec-body">
+          <div class="vendor-search-row">
+            <input class="vendor-search-input" placeholder="Search vendors by name or GST…" />
+            <select class="field-input sel" style="width:220px;">
+              <option>All Categories</option>
+              <option selected>Piping &amp; Valves</option>
+              <option>Mechanical — Static</option>
+              <option>Instrumentation</option>
+            </select>
+            <div style="font-size:var(--fs-xs);color:var(--fg-subtle);white-space:nowrap;">6 vendors in category</div>
+          </div>
+
+          <div class="vendor-grid">
+            <div class="vendor-row" onclick="toggleVendor(this)">
+              <input type="checkbox" class="vendor-chk" onchange="updateCount()" />
+              <div class="vendor-avatar" style="background:rgba(6,182,212,0.10);color:var(--accent);">PV</div>
+              <div style="flex:1;">
+                <div class="vendor-name">Precision Valves &amp; Controls Pvt Ltd</div>
+                <div class="vendor-meta">Nashik · GST: 27AAACF1234P1Z5 · Piping &amp; Valves</div>
+              </div>
+              <span class="badge badge-success" style="font-size:10px;">Approved</span>
+            </div>
+
+            <div class="vendor-row" onclick="toggleVendor(this)">
+              <input type="checkbox" class="vendor-chk" onchange="updateCount()" />
+              <div class="vendor-avatar" style="background:rgba(16,185,129,0.10);color:var(--success);">FL</div>
+              <div style="flex:1;">
+                <div class="vendor-name">Flowline Industries Ltd</div>
+                <div class="vendor-meta">Mumbai · GST: 27AAACF5678Q1Z3 · Piping &amp; Valves</div>
+              </div>
+              <span class="badge badge-success" style="font-size:10px;">Approved</span>
+            </div>
+
+            <div class="vendor-row" onclick="toggleVendor(this)">
+              <input type="checkbox" class="vendor-chk" onchange="updateCount()" />
+              <div class="vendor-avatar" style="background:rgba(245,158,11,0.10);color:var(--warning);">AT</div>
+              <div style="flex:1;">
+                <div class="vendor-name">Atlas Pipe &amp; Fittings Co</div>
+                <div class="vendor-meta">Pune · GST: 27AAACG8901R1Z7 · Piping &amp; Valves</div>
+              </div>
+              <span class="badge badge-success" style="font-size:10px;">Approved</span>
+            </div>
+
+            <div class="vendor-row" onclick="toggleVendor(this)">
+              <input type="checkbox" class="vendor-chk" onchange="updateCount()" />
+              <div class="vendor-avatar">SC</div>
+              <div style="flex:1;">
+                <div class="vendor-name">SteelCraft Fabrications Pvt Ltd</div>
+                <div class="vendor-meta">Chennai · GST: 33AAACS2345T1Z4 · Piping &amp; Structural</div>
+              </div>
+              <span class="badge badge-success" style="font-size:10px;">Approved</span>
+            </div>
+
+            <div class="vendor-row" onclick="toggleVendor(this)">
+              <input type="checkbox" class="vendor-chk" onchange="updateCount()" />
+              <div class="vendor-avatar">BP</div>
+              <div style="flex:1;">
+                <div class="vendor-name">Bharat Pipe Works Ltd</div>
+                <div class="vendor-meta">Ahmedabad · GST: 24AAACB6789U1Z2 · Piping &amp; Valves</div>
+              </div>
+              <span class="badge badge-success" style="font-size:10px;">Approved</span>
+            </div>
+
+            <div class="vendor-row disabled">
+              <input type="checkbox" class="vendor-chk" disabled />
+              <div class="vendor-avatar">NP</div>
+              <div style="flex:1;">
+                <div class="vendor-name">National Pipes &amp; Fittings</div>
+                <div class="vendor-meta">Surat · Pending vendor approval — cannot be invited</div>
+              </div>
+              <span class="badge" style="font-size:10px;background:rgba(245,158,11,0.10);color:var(--warning);">Pending Approval</span>
+            </div>
+          </div>
+
+          <!-- Selected summary -->
+          <div id="vendor-summary" style="margin-top:var(--s-4);display:none;">
+            <div style="font-size:var(--fs-xs);color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--s-2);">Selected for invite</div>
+            <div class="vendor-summary" id="vendor-chips"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /step2 -->
+
+  </main>
+
+  <!-- ── Sticky footer ────────────────────────────────────── -->
+  <div class="rfq-footer">
+    <!-- Step 1 footer -->
+    <div id="footer-step1" style="display:flex;width:100%;align-items:center;justify-content:space-between;">
+      <div style="display:flex;gap:var(--s-3);">
+        <a href="pr-detail-v2.html" class="btn btn-ghost">Discard</a>
+        <button class="btn btn-secondary" onclick="showToast('Draft saved — RFQ-2026-044')">Save as Draft</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:var(--s-3);">
+        <span style="font-size:var(--fs-xs);color:var(--fg-subtle);">Step 1 of 2 — RFQ details</span>
+        <button class="btn btn-primary" onclick="goToStep2()">
+          Next: Invite Vendors
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2 footer -->
+    <div id="footer-step2" style="display:none;width:100%;align-items:center;justify-content:space-between;">
+      <div style="display:flex;gap:var(--s-3);">
+        <button class="btn btn-ghost" onclick="goToStep1()">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4L6 8l4 4"/></svg>
+          Back to RFQ Details
+        </button>
+        <button class="btn btn-secondary" onclick="showToast('Draft saved — RFQ-2026-044')">Save as Draft</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:var(--s-3);">
+        <span style="font-size:var(--fs-xs);color:var(--fg-subtle);" id="footer-vendor-label">Step 2 of 2 — select vendors to invite</span>
+        <button class="btn btn-primary" onclick="publishRFQ()">
+          Publish RFQ
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.5"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    function toggleGroup(el) {
+      el.classList.toggle('expanded');
+    }
+    function toggleNav() { document.querySelector('.nav').classList.toggle('open'); document.getElementById('nav-backdrop').classList.toggle('open'); }
+    function closeNav()  { document.querySelector('.nav').classList.remove('open'); document.getElementById('nav-backdrop').classList.remove('open'); }
+
+    function goToStep2() {
+      // Switch UI
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
+      document.getElementById('footer-step1').style.display = 'none';
+      document.getElementById('footer-step2').style.display = 'flex';
+      // Update step bar
+      document.getElementById('step-indicator-1').className = 'step-item done';
+      document.getElementById('dot-1').textContent = '✓';
+      document.getElementById('step-indicator-2').className = 'step-item active';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToStep1() {
+      document.getElementById('step1').style.display = 'block';
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('footer-step1').style.display = 'flex';
+      document.getElementById('footer-step2').style.display = 'none';
+      document.getElementById('step-indicator-1').className = 'step-item active';
+      document.getElementById('dot-1').textContent = '1';
+      document.getElementById('step-indicator-2').className = 'step-item pending';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleVendor(row) {
+      const chk = row.querySelector('.vendor-chk');
+      if (chk.disabled) return;
+      chk.checked = !chk.checked;
+      row.classList.toggle('selected', chk.checked);
+      updateCount();
+    }
+
+    const vendorNames = {
+      'PV': 'Precision Valves', 'FL': 'Flowline Industries',
+      'AT': 'Atlas Pipe & Fittings', 'SC': 'SteelCraft', 'BP': 'Bharat Pipe Works'
+    };
+
+    function updateCount() {
+      const checked = document.querySelectorAll('.vendor-chk:checked:not(:disabled)');
+      const count = checked.length;
+      const chip = document.getElementById('vendor-count-chip');
+      chip.innerHTML = count > 0
+        ? `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--accent-soft);border:1px solid rgba(6,182,212,0.25);border-radius:999px;font-size:var(--fs-xs);color:var(--accent);font-weight:600;"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg>${count} selected</span>`
+        : '';
+      document.getElementById('footer-vendor-label').textContent =
+        count > 0 ? `${count} vendor${count !== 1 ? 's' : ''} selected` : 'Step 2 of 2 — select vendors to invite';
+
+      // Update chips
+      const summary = document.getElementById('vendor-summary');
+      const chips = document.getElementById('vendor-chips');
+      if (count > 0) {
+        summary.style.display = 'block';
+        chips.innerHTML = Array.from(checked).map(chk => {
+          const initials = chk.closest('.vendor-row').querySelector('.vendor-avatar').textContent.trim();
+          const name = chk.closest('.vendor-row').querySelector('.vendor-name').textContent;
+          return `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--accent-soft);border:1px solid rgba(6,182,212,0.2);border-radius:999px;font-size:var(--fs-xs);color:var(--accent);">${name}</span>`;
+        }).join('');
+      } else {
+        summary.style.display = 'none';
+      }
+    }
+
+    function publishRFQ() {
+      const count = document.querySelectorAll('.vendor-chk:checked:not(:disabled)').length;
+      if (count === 0) { showToast('Select at least one vendor before publishing'); return; }
+      showToast('RFQ-2026-044 published · ' + count + ' vendor' + (count !== 1 ? 's' : '') + ' invited');
+      setTimeout(() => { window.location.href = 'rfq-detail-v2.html'; }, 1800);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

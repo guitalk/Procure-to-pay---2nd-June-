@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aker — PR List v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .v2-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.3); border-radius: 999px;
+      font-size: 10px; font-weight: 600; color: #a855f7;
+      letter-spacing: 0.06em; margin-bottom: var(--s-4);
+    }
+    .ph {
+      background: var(--bg-elevated);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); font-size: var(--fs-xs);
+      font-style: italic;
+    }
+
+    /* Filter chips */
+    .filter-row { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-4); flex-wrap: wrap; }
+    .fchip {
+      padding: 5px var(--s-3); border-radius: 999px;
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      font-size: var(--fs-xs); color: var(--fg-muted); cursor: pointer;
+      transition: all 0.12s;
+    }
+    .fchip:hover { border-color: var(--border-strong); color: var(--fg); }
+    .fchip.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+    /* Table */
+    .pr-table { width: 100%; border-collapse: collapse; }
+    .pr-table th {
+      text-align: left; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em; color: var(--fg-muted);
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border); background: var(--bg-elevated);
+    }
+    .pr-table td {
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--fs-sm); vertical-align: middle;
+    }
+    .pr-table tbody tr { cursor: pointer; transition: background 0.1s; }
+    .pr-table tbody tr:hover td { background: var(--bg-subtle); }
+    .pr-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Progress bar inline */
+    .progress-wrap { display: flex; align-items: center; gap: var(--s-2); }
+    .progress-bar { height: 5px; border-radius: 3px; background: var(--bg-hover); flex: 1; min-width: 60px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+    .progress-fill.green { background: var(--success); }
+    .progress-fill.amber { background: var(--warning); }
+    .progress-fill.zero  { background: var(--bg-hover); }
+
+    .mono { font-family: var(--font-mono); }
+    .fg-muted { color: var(--fg-muted); }
+  </style>
+</head>
+<body class="app">
+
+  <!-- Nav -->
+  <aside class="nav">
+    <div class="nav-brand">
+      <button class="hamburger-btn" onclick="toggleNav()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+      <div class="nav-brand-text">
+        <div class="nav-brand-name">Procure</div>
+        <div class="nav-brand-sub">Procurement</div>
+      </div>
+    </div>
+        <div class="nav-items">
+      <a class="nav-item" href="dashboard.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header" href="clients.html" onclick="toggleGroup(this)">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V7l6-4 6 4v7zM6 14V9h4v5"/></svg>
+          <span>Master Data</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="clients.html">Clients</a>
+          <a class="nav-item nav-sub-item" href="projects.html">Projects</a>
+          <a class="nav-item nav-sub-item" href="vendor-categories.html">Categories</a>
+          <a class="nav-item nav-sub-item" href="terms-conditions.html">Terms &amp; Conditions</a>
+          <a class="nav-item nav-sub-item" href="payment-terms.html">Payment Terms</a>
+          <a class="nav-item nav-sub-item" href="inco-terms.html">Inco Terms</a>
+          <a class="nav-item nav-sub-item" href="uom.html">Unit of Measure</a>
+          <a class="nav-item nav-sub-item" href="additional-costs.html">Additional Costs</a>
+          <a class="nav-item nav-sub-item" href="vendors.html">Vendors</a>
+        </div>
+      </div>
+      <a class="nav-item active" href="pr-list-v2.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M5 8h6M5 11h4"/></svg>
+        <span>Purchase Requisitions</span>
+      </a>
+      <div class="nav-group">
+        <a class="nav-item nav-group-header expanded" href="rfq-list-v2.html">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8H2z"/><path d="M2 4l6 5 6-5"/></svg>
+          <span>RFQs</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <div class="nav-sub">
+          <a class="nav-item nav-sub-item" href="rfq-list-v2.html">All RFQs</a>
+          <a class="nav-item nav-sub-item" href="rfq-create-v2.html">New RFQ</a>
+        </div>
+      </div>
+      <a class="nav-item" href="purchase-orders.html">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l1.5 8.5a1 1 0 0 0 1 .85h7a1 1 0 0 0 1-.85L14 4"/><path d="M2 4h12M6 7v3M10 7v3"/></svg>
+        <span>Purchase Orders</span>
+      </a>
+    </div>
+    <div class="nav-footer">
+      <div class="user-card">
+        <div class="avatar">RS</div>
+        <div>
+          <div class="user-name">Rahul Singh</div>
+          <div class="user-email">Engineering Lead</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="nav-backdrop" id="nav-backdrop" onclick="closeNav()"></div>
+
+  <main class="main">
+
+    
+
+    <!-- Page header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--s-5);">
+      <div>
+        <div class="page-title">Purchase Requisitions</div>
+        <div style="font-size:var(--fs-sm); color:var(--fg-muted); margin-top:2px;">FPSO Njord Refit — Phase 3 · Engineering Lead view</div>
+      </div>
+      <a href="pr-create.html" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+        New PR
+      </a>
+    </div>
+
+    <!-- KPI tiles -->
+    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:var(--s-3); margin-bottom:var(--s-5);">
+      <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-4);">
+        <div style="font-size:var(--fs-2xl);font-weight:700;color:var(--fg);">12</div>
+        <div style="font-size:var(--fs-xs);color:var(--fg-muted);margin-top:2px;">Total PRs</div>
+      </div>
+      <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-4);">
+        <div style="font-size:var(--fs-2xl);font-weight:700;color:var(--warning);">3</div>
+        <div style="font-size:var(--fs-xs);color:var(--fg-muted);margin-top:2px;">Pending Approval</div>
+      </div>
+      <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-4);">
+        <div style="font-size:var(--fs-2xl);font-weight:700;color:var(--accent);">4</div>
+        <div style="font-size:var(--fs-xs);color:var(--fg-muted);margin-top:2px;">In Sourcing</div>
+      </div>
+      <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-4);">
+        <div style="font-size:var(--fs-2xl);font-weight:700;color:var(--success);">4</div>
+        <div style="font-size:var(--fs-xs);color:var(--fg-muted);margin-top:2px;">Completed</div>
+      </div>
+      <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-4);">
+        <div style="font-size:var(--fs-2xl);font-weight:700;color:var(--danger);">1</div>
+        <div style="font-size:var(--fs-xs);color:var(--fg-muted);margin-top:2px;">Rejected</div>
+      </div>
+    </div>
+
+    <!-- Filters + search -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--s-4);">
+      <div class="filter-row" style="margin-bottom:0;">
+        <button class="fchip active" onclick="setFilter(this)">All</button>
+        <button class="fchip" onclick="setFilter(this)">Draft</button>
+        <button class="fchip" onclick="setFilter(this)">Pending Approval</button>
+        <button class="fchip" onclick="setFilter(this)">Approved</button>
+        <button class="fchip" onclick="setFilter(this)">Partial</button>
+        <button class="fchip" onclick="setFilter(this)">Completed</button>
+        <button class="fchip" onclick="setFilter(this)">On Hold</button>
+        <button class="fchip" onclick="setFilter(this)">Rejected</button>
+      </div>
+      <div class="ph" style="width:220px; height:32px;">[ Search — TBD ]</div>
+    </div>
+
+    <!-- PR table -->
+    <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;">
+      <table class="pr-table">
+        <thead>
+          <tr>
+            <th>PR Number</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Items</th>
+            <th>RFQ Progress</th>
+            <th>Raised By</th>
+            <th>Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Pending Approval — all items awaiting EL sign-off -->
+          <tr onclick="window.location.href='pr-detail-v2.html'">
+            <td class="mono" style="color:var(--accent);">PR-2026-019</td>
+            <td style="font-weight:500;">Centrifugal Process Pumps — WI Service</td>
+            <td class="fg-muted">Mechanical — Rotating</td>
+            <td class="fg-muted">5 items</td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,0.10);color:var(--warning);">5 Pending Approval</span>
+              </div>
+            </td>
+            <td class="fg-muted">R. Singh</td>
+            <td class="fg-muted mono" style="font-size:11px;">28 May 2026</td>
+            <td><span class="badge badge-warning">Pending Approval</span></td>
+          </tr>
+
+          <!-- Partial — items spread across statuses -->
+          <tr onclick="window.location.href='pr-detail-v2.html'" style="border-left:2px solid var(--warning);">
+            <td class="mono" style="color:var(--accent);">PR-2026-018</td>
+            <td style="font-weight:500;">Mechanical Piping — Utility Deck</td>
+            <td class="fg-muted">Piping &amp; Valves</td>
+            <td class="fg-muted">8 items</td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.10);color:var(--success);">2 PO Generated</span>
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(168,85,247,0.10);color:#a855f7;">2 Comm. Eval</span>
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(6,182,212,0.10);color:var(--info);">1 Tech Eval</span>
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,0.10);color:var(--warning);">1 In RFQ</span>
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg-elevated);color:var(--fg-muted);">2 Approved</span>
+              </div>
+            </td>
+            <td class="fg-muted">R. Singh</td>
+            <td class="fg-muted mono" style="font-size:11px;">20 May 2026</td>
+            <td><span class="badge" style="background:rgba(245,158,11,0.10);color:var(--warning);">Partial</span></td>
+          </tr>
+
+          <!-- Completed — all PO Generated -->
+          <tr onclick="window.location.href='pr-detail-v2.html'">
+            <td class="mono" style="color:var(--accent);">PR-2026-017</td>
+            <td style="font-weight:500;">Electrical LV Panels — Main Switchboard</td>
+            <td class="fg-muted">Electrical LV</td>
+            <td class="fg-muted">6 items</td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.10);color:var(--success);">6 PO Generated</span>
+              </div>
+            </td>
+            <td class="fg-muted">A. Mehta</td>
+            <td class="fg-muted mono" style="font-size:11px;">12 May 2026</td>
+            <td><span class="badge badge-success">Completed</span></td>
+          </tr>
+
+          <!-- Rejected -->
+          <tr onclick="window.location.href='pr-detail-v2.html'">
+            <td class="mono" style="color:var(--fg-muted);">PR-2026-016</td>
+            <td style="font-weight:500;color:var(--fg-muted);">Civil Structural Steel — Module Supports</td>
+            <td class="fg-muted">Civil / Structural</td>
+            <td class="fg-muted">11 items</td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,0.08);color:var(--danger);">11 Rejected</span>
+              </div>
+            </td>
+            <td class="fg-muted">R. Singh</td>
+            <td class="fg-muted mono" style="font-size:11px;">08 May 2026</td>
+            <td><span class="badge badge-danger">Rejected</span></td>
+          </tr>
+
+          <!-- Sent for Correction -->
+          <tr onclick="window.location.href='pr-detail-v2.html'">
+            <td class="mono" style="color:var(--accent);">PR-2026-015</td>
+            <td style="font-weight:500;">Fire &amp; Gas Detection Systems</td>
+            <td class="fg-muted">Fire &amp; Gas Safety</td>
+            <td class="fg-muted">9 items</td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,0.10);color:var(--warning);">9 Sent for Correction</span>
+              </div>
+            </td>
+            <td class="fg-muted">R. Singh</td>
+            <td class="fg-muted mono" style="font-size:11px;">02 May 2026</td>
+            <td><span class="badge" style="background:rgba(245,158,11,0.10);color:var(--warning);">Sent for Correction</span></td>
+          </tr>
+
+          <!-- On Hold -->
+          <tr onclick="window.location.href='pr-detail-v2.html'">
+            <td class="mono" style="color:var(--fg-muted);">PR-2026-014</td>
+            <td style="font-weight:500;color:var(--fg-muted);">Instrumentation Analyzers — Process</td>
+            <td class="fg-muted">Instrumentation</td>
+            <td class="fg-muted">5 items</td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(113,113,122,0.12);color:var(--fg-muted);">5 On Hold</span>
+              </div>
+            </td>
+            <td class="fg-muted">A. Mehta</td>
+            <td class="fg-muted mono" style="font-size:11px;">28 Apr 2026</td>
+            <td><span class="badge" style="background:rgba(113,113,122,0.12);color:var(--fg-muted);">On Hold</span></td>
+          </tr>
+
+          <!-- Draft -->
+          <tr onclick="window.location.href='pr-detail-v2.html'">
+            <td class="mono" style="color:var(--fg-muted);">PR-2026-013</td>
+            <td style="font-weight:500;color:var(--fg-muted);">Heat Exchangers — Shell &amp; Tube</td>
+            <td class="fg-muted">Mechanical — Static</td>
+            <td class="fg-muted">3 items</td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(6,182,212,0.06);color:var(--info);">3 Draft</span>
+              </div>
+            </td>
+            <td class="fg-muted">R. Singh</td>
+            <td class="fg-muted mono" style="font-size:11px;">25 Apr 2026</td>
+            <td><span class="badge" style="background:rgba(6,182,212,0.10);color:var(--info);">Draft</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination placeholder -->
+    <div class="ph" style="height:40px; margin-top:var(--s-4);">[ Pagination — TBD ]</div>
+
+  </main>
+
+  <script>
+    function toggleGroup(el) {
+      el.classList.toggle('expanded');
+    }
+    function toggleNav() { document.querySelector('.nav').classList.toggle('open'); document.getElementById('nav-backdrop').classList.toggle('open'); }
+    function closeNav()  { document.querySelector('.nav').classList.remove('open'); document.getElementById('nav-backdrop').classList.remove('open'); }
+    function setFilter(el) {
+      document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+  </script>
+</body>
+</html>
